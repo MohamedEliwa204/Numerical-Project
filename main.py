@@ -110,17 +110,30 @@ class LUDecomposition(DirectSolver):
 
 
 class IterativeSolver(LineraSolver):
-    def getParameters(self, initial_guess, num_of_ites, abs_rel_erroe):
+    def getParameters(self, initial_guess, num_of_ites, abs_rel_error):
         self.initial_guess = initial_guess
         self.num_of_ites = num_of_ites
-        self.abs_rel_erroe = abs_rel_erroe
+        self.abs_rel_error = abs_rel_error
 
     @abstractmethod
     def iterate(self, A, b, x):
         pass
 
+    @override
     def solve(self):
-        pass
+        i = 0
+        x_old = self.initial_guess.copy()
+        x_new = self.initial_guess.copy()
+        for i in range(self.num_of_ites):
+            x_new = self.iterate(self.A, self.b, x_old)
+            if self.calculate_error(x_old, x_new) < self.abs_rel_error:
+                return x_new
+            x_old = x_new.copy()
+        return x_new
+
+    def calculate_error(self, x_old, x_new):
+        return np.max(np.abs(x_new - x_old) / np.maximum(np.abs(x_new), 1e-12)) * 100
+
 
 class GaussSeidel(IterativeSolver):
     @override
@@ -144,6 +157,3 @@ class JacobiIteration(IterativeSolver):
             x_new[k] = (b[k] - (np.dot(A[k, :k], x_old[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
 
         return x_new
-
-
-
