@@ -6,7 +6,7 @@ from typing_extensions import override
 
 
 class LineraSolver(ABC):
-    def __init__(self, A, b, precision=4):
+    def __init__(self, A, b, precision=5):
         self.A = np.array(A, dtype=float)
         self.b = np.array(b, dtype=float)
         self.n = len(b)
@@ -38,8 +38,8 @@ class DirectSolver(LineraSolver):
                 raise ValueError("Matrix is singular or near-singular.")
             for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
                 factor = A[i][k] / A[k][k]
-                A[i, k:] = A[i, k:] - factor * A[k, k:]
-                b[i] = b[i] - (factor * b[k])
+                A[i, k:] = np.round(A[i, k:] - factor * A[k, k:], decimals=self.precision)
+                b[i] = np.round(b[i] - (factor * b[k]), decimals=self.precision)
 
     def backward_elimination(self, A, b):
         n = A.shape[0]
@@ -107,4 +107,43 @@ class GaussJordan(DirectSolver):
 
 class LUDecomposition(DirectSolver):
     pass
+
+
+class IterativeSolver(LineraSolver):
+    def getParameters(self, initial_guess, num_of_ites, abs_rel_erroe):
+        self.initial_guess = initial_guess
+        self.num_of_ites = num_of_ites
+        self.abs_rel_erroe = abs_rel_erroe
+
+    @abstractmethod
+    def iterate(self, A, b, x):
+        pass
+
+    def solve(self):
+        pass
+
+class GaussSeidel(IterativeSolver):
+    @override
+    def iterate(self, A, b, x):
+        x_old = x.copy()
+        x_new = x.copy()
+
+        for k in range(0, self.n):
+            x_new[k] = (b[k] - (np.dot(A[k, :k], x_new[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
+
+        return x_new
+
+
+class JacobiIteration(IterativeSolver):
+    @override
+    def iterate(self, A, b, x):
+        x_old = x.copy()
+        x_new = np.zeros_like(x)
+
+        for k in range(0, self.n):
+            x_new[k] = (b[k] - (np.dot(A[k, :k], x_old[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
+
+        return x_new
+
+
 
