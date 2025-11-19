@@ -110,10 +110,17 @@ class LUDecomposition(DirectSolver):
 
 
 class IterativeSolver(LineraSolver):
-    def getParameters(self, initial_guess, num_of_ites, abs_rel_error):
-        self.initial_guess = initial_guess
+    def __init__(self, A, b, precision=5, initial_guess=None, num_of_ites=50, abs_rel_error=0.0001):
+        super().__init__(A, b, precision)
+
+
         self.num_of_ites = num_of_ites
         self.abs_rel_error = abs_rel_error
+
+        if initial_guess is None:
+            self.initial_guess = np.zeros(self.n)
+        else:
+            self.initial_guess = np.array(initial_guess, dtype=float)
 
     @abstractmethod
     def iterate(self, A, b, x):
