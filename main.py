@@ -105,9 +105,29 @@ class GaussJordan(DirectSolver):
         return np.round(solution, decimals=self.precision)
 
 
-class LUDecomposition(DirectSolver):
-    pass
-
+class CholeskyLUDecomposition(DirectSolver):
+    
+    @override
+    def solve(self):
+        A_bar = self.A.copy()
+        b_bar = self.b.copy()
+        n = A_bar.shape[0]
+        
+        for k in range(0, n):
+            for i in range(0, k): # calculate the elements below the diagonal
+                A_bar[k][i] = np.round((A_bar[k][i] - np.sum(A_bar[i, :i]*A_bar[k, :i])) / A_bar[i][i], decimals=self.precision)
+                A_bar[i][k] = A_bar[k][i]
+                
+            # Compute diagonal element
+            A_bar[k][k] = np.round(np.sqrt(A_bar[k][k] - np.sum(A_bar[k, :k]**2)), decimals=self.precision)
+            
+            if np.isclose(A_bar[k][k], 0):  # Check for singularity
+                raise ValueError("Matrix is singular or near-singular.")
+            
+        y = self.forward_substitution(np.tril(A_bar), b_bar)
+        x = self.backward_substitution(np.triu(A_bar), y)
+        return np.round(x, decimals=self.precision)
+        
 
 class IterativeSolver(LineraSolver):
     def __init__(self, A, b, precision=5, initial_guess=None, num_of_ites=50, abs_rel_error=0.0001):
@@ -164,3 +184,23 @@ class JacobiIteration(IterativeSolver):
             x_new[k] = (b[k] - (np.dot(A[k, :k], x_old[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
 
         return x_new
+    
+    
+A = np.array([
+    [25, 15, -5, 10, 5],
+    [15, 18,  0,  6, 2],
+    [-5,  0, 11,  2, 1],
+    [10,  6,  2, 18, 3],
+    [5,   2,  1,  3, 10]], dtype=float)
+
+b = np.array([30, 25, 10, 20, 15], dtype=float)
+
+solver = CholeskyLUDecomposition(A, b)
+x = solver.solve()
+print(x)
+
+L = np.linalg.cholesky(A)
+y = np.linalg.solve(L, b)
+x = np.linalg.solve(L.T, y)
+
+print(x)
