@@ -34,14 +34,14 @@ class DirectSolver(LineraSolver):
         for k in range(0, n - 1):  # row traverse(find the row to pivot)
             self.partial_pivoting(A, b, k)
 
-            if np.isclose(A[k][k], 0):  # Check for singularity
+            if np.isclose(A[k][k], 0):  # Check for singularity (pivot element is zero)
                 raise ValueError("Matrix is singular or near-singular.")
             for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
                 factor = A[i][k] / A[k][k]
                 A[i, k:] = np.round(A[i, k:] - factor * A[k, k:], decimals=self.precision)
                 b[i] = np.round(b[i] - (factor * b[k]), decimals=self.precision)
         
-        if np.isclose(A[n-1][n-1], 0):
+        if np.isclose(A[n-1][n-1], 0):  # Check for singularity (last element in diagonal after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")        
 
     def backward_elimination(self, A, b):
@@ -120,12 +120,17 @@ class DoolittleLUDecomposition(DirectSolver):
         for k in range(0, n - 1):  # row traverse(find the row to pivot)
             self.partial_pivoting(A_bar, b_bar, k)
 
-            if np.isclose(A_bar[k][k], 0):  # Check for singularity
+            if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot element is zero)
                 raise ValueError("Matrix is singular or near-singular.")
+            
             for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
                 factor = A_bar[i][k] / A_bar[k][k]
                 L[i][k] = factor  # to store factors
                 A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                
+        if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last element in diagonal after elimination is zero)
+            raise ValueError("Matrix is singular or near-singular.")
+        
         np.fill_diagonal(L, 1)
         U = A_bar
 
@@ -161,6 +166,9 @@ class CroutLUDecomposition(DirectSolver):
                 factor = A_bar[i][k] / A_bar[k][k]
                 L[i][k] = factor  # to store factors
                 A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                
+        if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last element in diagonal after elimination is zero)
+            raise ValueError("Matrix is singular or near-singular.")
 
         np.fill_diagonal(L, 1)
         U = A_bar
@@ -186,6 +194,9 @@ class CholeskyLUDecomposition(DirectSolver):
         b_bar = self.b.copy()
         n = A_bar.shape[0]
         
+        if not np.array_equal(A_bar, A_bar.T):  # Check for symmetry
+            raise ValueError("Matrix is not symmetric")
+        
         for k in range(0, n):
             for i in range(0, k): # calculate the elements below the diagonal
                 A_bar[k][i] = np.round((A_bar[k][i] - np.sum(A_bar[i, :i]*A_bar[k, :i])) / A_bar[i][i], decimals=self.precision)
@@ -195,7 +206,9 @@ class CholeskyLUDecomposition(DirectSolver):
             A_bar[k][k] = np.round(np.sqrt(A_bar[k][k] - np.sum(A_bar[k, :k]**2)), decimals=self.precision)
             
             if np.isclose(A_bar[k][k], 0):  # Check for singularity
-                raise ValueError("Matrix is singular or near-singular.")
+                raise ValueError("Matrix is singular or near-singular")
+            elif np.isnan(A_bar[k][k]) or np.iscomplexobj(A_bar[k][k]): # Check for positive definiteness
+                raise ValueError("Matrix is not positive definite")
             
         y = self.forward_substitution(np.tril(A_bar), b_bar)
         x = self.backward_substitution(np.triu(A_bar), y)
@@ -257,17 +270,3 @@ class JacobiIteration(IterativeSolver):
             x_new[k] = (b[k] - (np.dot(A[k, :k], x_old[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
 
         return x_new
-
-A = np.array([[1, 2], [2, 4]])
-b = np.array([3, 6])
-# get the forword elimination matrix of A
-solver = GaussElimination(A, b, precision=5)
-#print(solver.forward_elimination(A.copy(), b.copy()))
-
-
-try:
-    solution = solver.solve()
-    print("Solution:", solution)
-except ValueError as e:
-    print("Error:", e)
-
