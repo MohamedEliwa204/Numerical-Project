@@ -1,4 +1,6 @@
 # 0-based index
+# rtol: 1e-05
+# atol: 1e-08
 import numpy as np
 from abc import ABC, abstractmethod
 
@@ -18,31 +20,75 @@ class LineraSolver(ABC):
 
 
 class DirectSolver(LineraSolver):
-    def partial_pivoting(self, A, b, k):
+    def __init__(self, A, b, precision=5, withScaling=False):
+        super().__init__(A, b, precision)
+        self.withScaling = withScaling
+        
+    def scaling(self, A):
+        n = A.shape[0]
+        scalar = np.zeros(n)
+        
+        for i in range(n):
+            largest_coef = max(abs(A[i, :n])) # find the largest coefficient magnitude in row i
+            scalar[i] = largest_coef
+            
+        return scalar
+    
+    def partial_pivoting(self, A, b, k, scalar):
         n = A.shape[0]
         max_index = k
-        for i in range(k, n):
-            if abs(A[i][k]) > abs(A[max_index][k]):
-                max_index = i
+        
+        if scalar is None: 
+            # pivoting without scaling
+            for i in range(k, n):
+                if abs(A[i][k]) > abs(A[max_index][k]):
+                    max_index = i
+        else:
+            # pivoting with scaling
+            big = abs(A[k][k]) / scalar[k]
+            for i in range(k+1, n):
+                dummy = abs(A[i][k]) / scalar[i]
+                if dummy > big:
+                    big = dummy
+                    max_index = i
 
         if max_index != k:
             A[[k, max_index]] = A[[max_index, k]]
             b[[k, max_index]] = b[[max_index, k]]
-
+            if scalar is not None:
+                scalar[[k, max_index]] = scalar[[max_index, k]]
+    
+                
+    def isSingular(self, pivot, scalarValue=None):
+        if scalarValue is None:
+            return np.isclose(pivot, 0)
+        else:
+            return np.isclose(pivot/scalarValue, 0)
+    
+                
     def forward_elimination(self, A, b):
         n = A.shape[0]
+        
+        # compute scaling if needed
+        scalar = self.scaling(A) if self.withScaling else None
+    
+        # check for any zero row (true singularity)
+        if scalar is not None and np.any(np.isclose(scalar, 0)):
+            raise ValueError("Matrix is singular or near-singular")
+        
         for k in range(0, n - 1):  # row traverse(find the row to pivot)
-            self.partial_pivoting(A, b, k)
+            self.partial_pivoting(A, b, k, scalar)
 
-            if np.isclose(A[k][k], 0):  # Check for singularity (pivot element is zero)
-                raise ValueError("Matrix is singular or near-singular.")
+            if self.isSingular(A[k][k], scalar[k] if scalar is not None else None):  # Check for singularity (pivot is zero)
+                raise ValueError("Matrix is singular or near-singular")
+            
             for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
                 factor = A[i][k] / A[k][k]
                 A[i, k:] = np.round(A[i, k:] - factor * A[k, k:], decimals=self.precision)
                 b[i] = np.round(b[i] - (factor * b[k]), decimals=self.precision)
         
-        if np.isclose(A[n-1][n-1], 0):  # Check for singularity (last element in diagonal after elimination is zero)
-            raise ValueError("Matrix is singular or near-singular.")        
+        if self.isSingular(A[n-1][n-1], scalar[n-1] if scalar is not None else None):  # Check for singularity (last pivot after elimination is zero)
+            raise ValueError("Matrix is singular or near-singular")     
 
     def backward_elimination(self, A, b):
         n = A.shape[0]
@@ -116,11 +162,18 @@ class DoolittleLUDecomposition(DirectSolver):
 
         n = A_bar.shape[0]
         L = np.zeros((n, n))
+        
+        # compute scaling if needed
+        scalar = self.scaling(A_bar) if self.withScaling else None
+    
+        # check for any zero row (true singularity)
+        if scalar is not None and np.any(np.isclose(scalar, 0)):
+            raise ValueError("Matrix is singular or near-singular")
 
         for k in range(0, n - 1):  # row traverse(find the row to pivot)
-            self.partial_pivoting(A_bar, b_bar, k)
+            self.partial_pivoting(A_bar, b_bar, k, scalar)
 
-            if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot element is zero)
+            if self.isSingular(A_bar[k][k], scalar[k] if scalar is not None else None):  # Check for singularity (pivot is zero)
                 raise ValueError("Matrix is singular or near-singular.")
             
             for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
@@ -128,7 +181,7 @@ class DoolittleLUDecomposition(DirectSolver):
                 L[i][k] = factor  # to store factors
                 A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
                 
-        if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last element in diagonal after elimination is zero)
+        if self.isSingular(A_bar[n-1][n-1], scalar[n-1] if scalar is not None else None):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
         
         np.fill_diagonal(L, 1)
@@ -160,14 +213,14 @@ class CroutLUDecomposition(DirectSolver):
                 # Swap the order tracker
                 o[[k, max_index]] = o[[max_index, k]]
 
-            if np.isclose(A_bar[k][k], 0):  # Check for singularity
+            if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot is zero)
                 raise ValueError("Matrix is singular or near-singular.")
             for i in range(k + 1, n):  # row traverse (apply the elimination for specific row)
                 factor = A_bar[i][k] / A_bar[k][k]
                 L[i][k] = factor  # to store factors
                 A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
                 
-        if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last element in diagonal after elimination is zero)
+        if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
 
         np.fill_diagonal(L, 1)
@@ -202,7 +255,7 @@ class CholeskyLUDecomposition(DirectSolver):
                 A_bar[k][i] = np.round((A_bar[k][i] - np.sum(A_bar[i, :i]*A_bar[k, :i])) / A_bar[i][i], decimals=self.precision)
                 A_bar[i][k] = A_bar[k][i]
                 
-            # Compute diagonal element
+            # Compute diagonal elements
             A_bar[k][k] = np.round(np.sqrt(A_bar[k][k] - np.sum(A_bar[k, :k]**2)), decimals=self.precision)
             
             if np.isclose(A_bar[k][k], 0):  # Check for singularity

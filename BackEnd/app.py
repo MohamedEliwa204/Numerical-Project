@@ -17,18 +17,19 @@ def solve_system():
         A = np.array(data['A'])
         b = np.array(data['b'])
         method = data.get('method')
-        precision = data.get('precision')
-        initial_guess = data.get('initial_guess')
-        num_of_ites = data.get('num_of_ites')
-        abs_rel_error = data.get('abs_rel_error')
+        precision = data.get('precision', 5)
+        initial_guess = data.get('initial_guess', None)
+        num_of_ites = data.get('num_of_ites', 50)
+        abs_rel_error = data.get('abs_rel_error', 0.0001)
+        withScaling = data.get('scaling', False)
         
         match method:
             case 'GaussElimination':
-                solver = GaussElimination(A, b, precision)
+                solver = GaussElimination(A, b, precision, withScaling)
             case 'GaussJordan':
-                solver = GaussJordan(A, b, precision)
+                solver = GaussJordan(A, b, precision, withScaling)
             case 'DoolittleLUDecomposition':
-                solver = DoolittleLUDecomposition(A, b, precision)
+                solver = DoolittleLUDecomposition(A, b, precision, withScaling)
             case 'CroutLUDecomposition':
                 solver = CroutLUDecomposition(A, b, precision)
             case 'CholeskyLUDecomposition':
