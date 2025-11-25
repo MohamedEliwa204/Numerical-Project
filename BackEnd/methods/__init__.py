@@ -1,1 +1,2 @@
-from .main import *
+from .DirectMethods import *
+from .IndirectMethods import *
