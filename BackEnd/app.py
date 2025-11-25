@@ -1,0 +1,71 @@
+from flask import Flask, request
+from methods import *
+import numpy as np
+import time
+
+app = Flask(__name__)
+
+@app.route('/solve', methods=['POST', 'GET'])
+
+def solve_system():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+        except:
+            return {'error': 'The input is not valid JSON'}
+        
+        A = np.array(data['A'])
+        b = np.array(data['b'])
+        method = data.get('method')
+        precision = data.get('precision', 5)
+        initial_guess = data.get('initial_guess', None)
+        num_of_ites = data.get('num_of_ites', 50)
+        abs_rel_error = data.get('abs_rel_error', 0.0001)
+        withScaling = data.get('scaling', False)
+        
+        match method:
+            case 'GaussElimination':
+                solver = GaussElimination(A, b, precision, withScaling)
+            case 'GaussJordan':
+                solver = GaussJordan(A, b, precision, withScaling)
+            case 'DoolittleLUDecomposition':
+                solver = DoolittleLUDecomposition(A, b, precision, withScaling)
+            case 'CroutLUDecomposition':
+                solver = CroutLUDecomposition(A, b, precision)
+            case 'CholeskyLUDecomposition':
+                solver = CholeskyLUDecomposition(A, b, precision)
+            case 'GaussSeidel':
+                solver = GaussSeidel(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
+            case 'JacobiIteration':
+                solver = JacobiIteration(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
+            case None:
+                return {'error': 'Selection of method is required'}
+            
+        startTime = time.time()
+        
+        try:
+            solution = solver.solve()
+        except ValueError as e:
+            return {'error': str(e)}
+        
+        endTime = time.time()
+        executionTime = endTime - startTime
+        
+        """
+        result = {
+            'solution': solution.tolist(),
+            'executionTime': executionTime,
+        }
+        
+        if hasattr(solver, 'num_of_ites'):
+            result['num_of_ites'] = solver.num_of_ites
+        """
+        
+        return {
+            'solution': solution.tolist(),
+            'executionTime': executionTime,
+            'num_of_ites': getattr(solver, 'num_of_ites', None)
+        }
+            
+if __name__ == '__main__':
+    app.run(debug=True) 
