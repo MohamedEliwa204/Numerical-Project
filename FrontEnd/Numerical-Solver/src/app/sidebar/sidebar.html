@@ -1,0 +1,18 @@
+<div class="sidebar-container">
+    <div class="header">
+        <h1 class="title">NUMERICAL<br>SOLVER</h1>
+        <p class="subtitle">Phase 1 Project</p>
+    </div>
+
+    <nav class="nav-list">
+        @for (m of methods; track m) {
+        <button (click)="selectMethod.emit(m)" [class.active]="selectedMethod === m" class="nav-item">
+            <span class="nav-text">{{ m }}</span>
+        </button>
+        }
+    </nav>
+
+    <div class="footer">
+        Alexandria University<br>CSE Dept.
+    </div>
+</div>

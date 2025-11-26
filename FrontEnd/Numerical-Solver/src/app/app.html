@@ -1,0 +1,76 @@
+<div class="app-layout">
+
+  <!-- Left Sidebar -->
+  <aside class="sidebar-wrapper">
+    <app-sidebar [selectedMethod]="selectedMethod()" (selectMethod)="selectedMethod.set($event)">
+    </app-sidebar>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+
+    <!-- Workspace Grid -->
+    <div class="workspace">
+
+      <!-- Center: Matrix Input -->
+      <div class="center-panel">
+        <app-matrix-input [size]="numEquations()" (sizeChange)="numEquations.set($event)"
+          (matrixChange)="onMatrixDataChange($event)">
+        </app-matrix-input>
+
+        <!-- Results Panel -->
+        @if (solution()) {
+        <div class="results-panel animate-slide-up">
+          <div class="results-header">
+            <div>
+              <h3 class="results-title">Solution Found</h3>
+              <div class="results-meta">
+                <span class="meta-item">
+                  <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  {{ executionTime() }}ms
+                </span>
+                @if (iterations() > 0) {
+                <span class="meta-item">
+                  <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                  </svg>
+                  {{ iterations() }} iterations
+                </span>
+                }
+              </div>
+            </div>
+            <button (click)="solution.set(null)" class="close-btn">
+              <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Solution Vector Display -->
+          <div class="solution-grid">
+            @for (x of solution(); track i; let i = $index) {
+            <div class="solution-item">
+              <div class="solution-label">x{{i+1}}</div>
+              <div class="solution-value">{{ x }}</div>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Right: Parameters -->
+      <div class="right-panel">
+        <app-parameters [method]="selectedMethod()" [size]="numEquations()" (solve)="onSolve($event)">
+        </app-parameters>
+      </div>
+
+    </div>
+  </main>
+
+</div>
