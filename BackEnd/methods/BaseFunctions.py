@@ -12,10 +12,17 @@ class LineraSolver(ABC):
         self.b = np.array(b, dtype=float)
         self.n = len(b)
         self.precision = precision
+        self.steps = []
 
     @abstractmethod
     def solve(self):
         pass
+    
+    def addStep(self, message, data):
+        self.steps.append((message, data))
+    
+    def getSteps(self):
+        return self.steps
     
     
 # helper functions for direct methods
