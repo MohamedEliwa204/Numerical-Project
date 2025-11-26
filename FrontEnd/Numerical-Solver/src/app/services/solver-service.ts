@@ -8,8 +8,8 @@ import { ResponseData } from '../models/response-data';
   providedIn: 'root',
 })
 export class SolverService {
-  // private apiUrl = "https://localhost:8080"
-  private apiUrl = "https://4c951f5e866d2897bca6g1j3tghyyyyyb.oast.pro"
+  private apiUrl = "https://localhost:5000"
+  // private apiUrl = "https://4c951f5e866d2897bca6g1j3tghyyyyyb.oast.pro"
 
   private httpOptions = {
     headers: new HttpHeaders({

@@ -5,12 +5,13 @@ import time
 
 app = Flask(__name__)
 
-@app.route('/solve', methods=['POST', 'GET'])
-
+@app.route('/solve', methods=['POST'])
 def solve_system():
     if request.method == 'POST':
         try:
+            # print(request)
             data = request.get_json()
+            print(data)
         except:
             return {'error': 'The input is not valid JSON'}
         
@@ -68,4 +69,4 @@ def solve_system():
         }
             
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True, port=5000) 
