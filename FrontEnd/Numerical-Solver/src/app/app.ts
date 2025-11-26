@@ -27,8 +27,8 @@ export class App {
   iterations = signal(0);
 
   constructor(
-    private api : SolverService
-  ) {}
+    private api: SolverService
+  ) { }
 
   onMatrixDataChange(data: { A: number[][], B: number[], precision: number }) {
     this.matrixA.set(data.A);
@@ -37,7 +37,7 @@ export class App {
   }
 
   onSolve(params: SolverParams) {
-    const startTime = performance.now();
+    // const startTime = performance.now();
 
     let methodUsed: string = 'GaussElimination'
     switch (this.selectedMethod()) {
@@ -74,46 +74,35 @@ export class App {
     console.log('Precision: ', this.precision());
     console.log('Params:', params);
 
-    let dataSent : RequestData = {
-      A : this.matrixA(),
-      b : this.vectorB(),
-      method : methodUsed,
-      precision : this.precision(),
-      withScaling : params.useScaling,
-      initial_guess : params.initialGuess,
-      num_of_ites : params.maxIterations,
-      abs_rel_error : params.tolerance
+    let dataSent: RequestData = {
+      A: this.matrixA(),
+      b: this.vectorB(),
+      method: methodUsed,
+      precision: this.precision(),
+      withScaling: params.useScaling,
+      initial_guess: params.initialGuess,
+      num_of_ites: params.maxIterations,
+      abs_rel_error: params.tolerance
     }
 
-    setTimeout(() => {
-      let response : ResponseData = {solution : [], executionTime : -1, num_of_ites : -1};
-      
-      this.api.getSolution(dataSent).subscribe({
-        next: (actual_response) => {
-        response = actual_response
+    this.api.getSolution(dataSent).subscribe({
+      next: (response) => {
         console.log('Response from Backend: ', response);
+
+        const result = response.solution.map((val) => {
+          return val.toFixed(this.precision())
+        })
+        this.solution.set(result);
+
+        this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
+          ? params.maxIterations : 0);
+
+        // const endTime = performance.now();
+        this.executionTime.set(parseFloat(response.executionTime.toFixed(12)));
       },
       error: (error) => {
-        console.error('Error Sending Solution Request:', error);
+        console.error('Error Sending Solution Request:', error.error.error);
       }
-      })
-
-      
-      // const result = Array(this.numEquations()).fill(0).map(() => {
-      //   const val = (Math.random() * 10) - 5;
-      //   return val.toFixed(this.precision());
-      // });
-
-      const result = response.solution.map((val) => {
-        return val.toFixed(this.precision())
-      })
-      this.solution.set(result);
-
-      this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
-        ? params.maxIterations : 0);
-
-      const endTime = performance.now();
-      this.executionTime.set(parseFloat(response.executionTime.toFixed(2)));
-    }, 500);
+    })
   }
 }

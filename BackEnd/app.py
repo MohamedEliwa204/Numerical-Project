@@ -1,9 +1,11 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from methods import *
 import numpy as np
 import time
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/solve', methods=['POST'])
 def solve_system():
@@ -11,9 +13,9 @@ def solve_system():
         try:
             # print(request)
             data = request.get_json()
-            print(data)
+            # print(data)
         except:
-            return {'error': 'The input is not valid JSON'}
+            return jsonify({'error': 'The input is not valid JSON'}), 400
         
         A = np.array(data['A'])
         b = np.array(data['b'])
@@ -40,14 +42,14 @@ def solve_system():
             case 'JacobiIteration':
                 solver = JacobiIteration(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
             case None:
-                return {'error': 'Selection of method is required'}
+                return jsonify({'error': 'Selection of method is required'}), 400
             
         startTime = time.time()
         
         try:
             solution = solver.solve()
         except ValueError as e:
-            return {'error': str(e)}
+            return jsonify({'error': str(e)}), 400
         
         endTime = time.time()
         executionTime = endTime - startTime
@@ -62,11 +64,11 @@ def solve_system():
             result['num_of_ites'] = solver.num_of_ites
         """
         
-        return {
+        return jsonify({
             'solution': solution.tolist(),
             'executionTime': executionTime,
             'num_of_ites': getattr(solver, 'num_of_ites', None)
-        }
+        })
             
 if __name__ == '__main__':
     app.run(debug=True, port=5000) 

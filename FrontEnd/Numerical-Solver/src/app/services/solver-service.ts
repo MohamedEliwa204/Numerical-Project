@@ -8,7 +8,7 @@ import { ResponseData } from '../models/response-data';
   providedIn: 'root',
 })
 export class SolverService {
-  private apiUrl = "https://localhost:5000"
+  private apiUrl = "http://localhost:5000"
   // private apiUrl = "https://4c951f5e866d2897bca6g1j3tghyyyyyb.oast.pro"
 
   private httpOptions = {
@@ -22,9 +22,9 @@ export class SolverService {
   ) {}
 
 
-  getSolution(data : RequestData) : Observable<ResponseData> {
-    // const url = this.apiUrl + "/solve"
-    const url = this.apiUrl
+  getSolution(data : any) : Observable<ResponseData> {
+    const url = this.apiUrl + "/solve"
+    // const url = this.apiUrl
     return this.http.post<ResponseData>(url, data, this.httpOptions)
   }
 }
