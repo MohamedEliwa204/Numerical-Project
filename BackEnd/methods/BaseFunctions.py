@@ -128,7 +128,7 @@ class DirectSolver(LineraSolver):
     
 # helper functions for iterative methods    
 class IterativeSolver(LineraSolver):
-    def __init__(self, A, b, precision=5, initial_guess=None, num_of_ites=50, abs_rel_error=0.0001):
+    def __init__(self, A, b, precision=5, initial_guess=None, num_of_ites=None, abs_rel_error=None):
         super().__init__(A, b, precision)
 
 
@@ -149,12 +149,21 @@ class IterativeSolver(LineraSolver):
         i = 0
         x_old = self.initial_guess.copy()
         x_new = self.initial_guess.copy()
-        for i in range(self.num_of_ites):
-            x_new = self.iterate(self.A, self.b, x_old)
-            if self.calculate_error(x_old, x_new) < self.abs_rel_error:
-                return x_new
-            x_old = x_new.copy()
-        return x_new
+        
+        if self.abs_rel_error is None:
+            for i in range(self.num_of_ites):
+                x_new = self.iterate(self.A, self.b, x_old)
+                x_old = x_new.copy()
+            return x_new
+        
+        elif self.num_of_ites is None:
+            self.num_of_ites = 0
+            while True:
+                x_new = self.iterate(self.A, self.b, x_old)
+                self.num_of_ites += 1
+                if self.calculate_error(x_old, x_new) < self.abs_rel_error:
+                    return x_new
+                x_old = x_new.copy()
 
     def calculate_error(self, x_old, x_new):
         return np.max(np.abs(x_new - x_old) / np.maximum(np.abs(x_new), 1e-12)) * 100

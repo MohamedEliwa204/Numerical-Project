@@ -18,9 +18,9 @@ def solve_system():
         b = np.array(data['b'])
         method = data.get('method')
         precision = data.get('precision', 5)
-        initial_guess = data.get('initial_guess', None)
-        num_of_ites = data.get('num_of_ites', 50)
-        abs_rel_error = data.get('abs_rel_error', 0.0001)
+        initial_guess = data.get('initial_guess')
+        num_of_ites = data.get('num_of_ites')
+        abs_rel_error = data.get('abs_rel_error')
         withScaling = data.get('scaling', False)
         
         match method:
