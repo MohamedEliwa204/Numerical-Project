@@ -157,13 +157,22 @@ class IterativeSolver(LineraSolver):
             return x_new
         
         elif self.num_of_ites is None:
+            # Diagonally Dominant test
+            #for i in range(self.n):
+            #    sum_row = sum(abs(self.A[i, :self.n]))
+            #    if abs(self.A[i][i]) < sum_row - abs(self.A[i][i]):
+            #        raise ValueError("The matrix is not diagonally dominant (May not converge)")
+            
             self.num_of_ites = 0
-            while True:
+            while self.num_of_ites < 50:
                 x_new = self.iterate(self.A, self.b, x_old)
                 self.num_of_ites += 1
                 if self.calculate_error(x_old, x_new) < self.abs_rel_error:
                     return x_new
                 x_old = x_new.copy()
+                
+            if self.num_of_ites == 50:
+                raise ValueError("The method did not converge within 50 iterations")
 
     def calculate_error(self, x_old, x_new):
         return np.max(np.abs(x_new - x_old) / np.maximum(np.abs(x_new), 1e-12)) * 100
