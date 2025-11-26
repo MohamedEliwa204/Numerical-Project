@@ -36,8 +36,28 @@ class DoolittleLUDecomposition(DirectSolver):
         # compute scaling if needed and raise error for singularity
         self.scaling(A_bar) if self.withScaling else None
 
-        for k in range(0, n - 1):  # row traverse(find the row to pivot)
-            self.partial_pivoting(A_bar, b_bar, k)
+        for k in range(0, n - 1):  # row traverse(find the row to pivot) and pivoting
+            old_row = k
+            max_index = k
+            if self.withScaling is False:
+                for i in range(k, n):
+                    if abs(A_bar[i][k]) > abs(A_bar[max_index][k]):
+                        max_index = i
+            else:
+                big = abs(A_bar[k][k]) / self.scalar[k]
+                for i in range(k + 1, n):
+                    dummy = abs(A_bar[i][k]) / self.scalar[i]
+                    if dummy > big:
+                        big = dummy
+                        max_index = i
+
+            if max_index != k:
+                A_bar[[k, max_index]] = A_bar[[max_index, k]]
+                b_bar[[k, max_index]] = b_bar[[max_index, k]]
+                if self.scalar is not None:
+                    self.scalar[[k, max_index]] = self.scalar[[max_index, k]]
+                if k > 0:
+                    L[[k, max_index], :k] = L[[max_index, k], :k] # swap factors in L too
 
             if self.isSingular(A_bar[k][k], k):  # Check for singularity (pivot is zero)
                 raise ValueError("Matrix is singular or near-singular.")
@@ -76,8 +96,10 @@ class CroutLUDecomposition(DirectSolver):
             if max_index != k:
                 # Swap rows in A_bar (equivalent to swapping cols in A)
                 A_bar[[k, max_index]] = A_bar[[max_index, k]]
-                # Swap the order tracker
+                # Swap the order tracker (to keep order of the right solutions)
                 o[[k, max_index]] = o[[max_index, k]]
+                # swap rows in L (factors)
+                L[[k, max_index]] = L[[max_index, k]]
 
             if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot is zero)
                 raise ValueError("Matrix is singular or near-singular.")
