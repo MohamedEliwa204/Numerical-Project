@@ -1,0 +1,62 @@
+@if (solved) {
+
+  <div class="iteration-panel">
+
+    <div class="iteration-header">
+      <h2>Iteration Steps</h2>
+
+      <div class="iteration-controls">
+        <button (click)="prevStep()" [disabled]="currentIndex === 0">Previous</button>
+        <span class="step-counter">Step {{ currentIndex + 1 }} / {{ iterations.length }}</span>
+        <button (click)="nextStep()" [disabled]="currentIndex === iterations.length - 1">Next</button>
+      </div>
+    </div>
+
+    @if (iterations.length > 0) {
+      <div class="iteration-body">
+
+        <div class="matrix-display">
+
+          <!-- Matrix A -->
+          <div class="matrix-block">
+            <div class="matrix-title">Matrix A</div>
+
+            <div class="matrix">
+              @for (row of iterations[currentIndex].A; track i; let i = $index) {
+                <div class="matrix-row">
+                  @for (val of row; track j; let j = $index) {
+                    <div class="matrix-cell">{{ val }}</div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="augmented-symbol">|</div>
+
+          <!-- Vector B -->
+          <div class="matrix-block">
+            <div class="matrix-title">Vector B</div>
+
+            <div class="matrix">
+              @for (val of iterations[currentIndex].B; track k; let k = $index) {
+                <div class="matrix-row">
+                  <div class="matrix-cell">{{ val }}</div>
+                </div>
+              }
+            </div>
+          </div>
+
+        </div>
+      </div>
+    }
+
+    @if (iterations.length === 0) {
+      <div class="no-data">
+        No iteration results loaded yet.
+      </div>
+    }
+
+  </div>
+
+}

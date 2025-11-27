@@ -5,6 +5,7 @@ class GaussElimination(DirectSolver):
     def solve(self):
         A_bar = self.A.copy()
         b_bar = self.b.copy()
+        self.steps.clear()
 
         self.forward_elimination(A_bar, b_bar)
         solution = self.backward_substitution(A_bar, b_bar)
@@ -14,6 +15,7 @@ class GaussElimination(DirectSolver):
 class GaussJordan(DirectSolver):
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
@@ -27,6 +29,7 @@ class GaussJordan(DirectSolver):
 class DoolittleLUDecomposition(DirectSolver):
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
@@ -81,6 +84,7 @@ class DoolittleLUDecomposition(DirectSolver):
 class CroutLUDecomposition(DirectSolver):
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy().T  # use the transpose and apply same Doolittle logic
         b_bar = self.b.copy()
 
@@ -131,6 +135,7 @@ class CroutLUDecomposition(DirectSolver):
 class CholeskyLUDecomposition(DirectSolver): 
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
         n = A_bar.shape[0]

@@ -1,0 +1,111 @@
+.iteration-panel {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  margin-top: 1.5rem;
+}
+
+.iteration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.iteration-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.iteration-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.iteration-controls button {
+  padding: 0.4rem 1rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.iteration-controls button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.iteration-controls button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.step-counter {
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.iteration-body {
+  border-top: 1px solid #cbd5e1;
+  padding-top: 1rem;
+}
+
+.matrix-display {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.matrix-block {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.matrix-title {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #334155;
+}
+
+.matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.matrix-row {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.matrix-cell {
+  min-width: 40px;
+  padding: 0.35rem 0.5rem;
+  background: #e2e8f0;
+  text-align: center;
+  border-radius: 6px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.augmented-symbol {
+  font-size: 2rem;
+  font-weight: bold;
+  padding-top: 1.5rem;
+  color: #475569;
+}
+
+.no-data {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  padding: 1rem 0;
+}

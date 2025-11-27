@@ -7,10 +7,11 @@ import { Parameters } from './parameters/parameters';
 import { ResponseData } from './models/response-data';
 import { RequestData } from './models/request-data';
 import { SolverService } from './services/solver-service';
+import {StepsPanel} from './steps-panel/steps-panel';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, Sidebar, MatrixInput, Parameters],
+  imports: [CommonModule, Sidebar, MatrixInput, Parameters, StepsPanel],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -85,8 +86,17 @@ export class App {
       abs_rel_error: params.tolerance
     }
 
+<<<<<<< Updated upstream
     this.api.getSolution(dataSent).subscribe({
       next: (response) => {
+=======
+    setTimeout(() => {
+      let response : ResponseData = {solution : [], executionTime : -1, num_of_ites : -1};
+
+      this.api.getSolution(dataSent).subscribe({
+        next: (actual_response) => {
+        response = actual_response
+>>>>>>> Stashed changes
         console.log('Response from Backend: ', response);
 
         const result = response.solution.map((val) => {
@@ -103,6 +113,28 @@ export class App {
       error: (error) => {
         console.error('Error Sending Solution Request:', error.error.error);
       }
+<<<<<<< Updated upstream
     })
+=======
+      })
+
+
+      // const result = Array(this.numEquations()).fill(0).map(() => {
+      //   const val = (Math.random() * 10) - 5;
+      //   return val.toFixed(this.precision());
+      // });
+
+      const result = response.solution.map((val) => {
+        return val.toFixed(this.precision())
+      })
+      this.solution.set(result);
+
+      this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
+        ? params.maxIterations : 0);
+
+      const endTime = performance.now();
+      this.executionTime.set(parseFloat(response.executionTime.toFixed(2)));
+    }, 500);
+>>>>>>> Stashed changes
   }
 }
