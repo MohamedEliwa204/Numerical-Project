@@ -66,9 +66,10 @@ class DoolittleLUDecomposition(DirectSolver):
                 raise ValueError("Matrix is singular or near-singular.")
             
             for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
-                factor = A_bar[i][k] / A_bar[k][k]
+                factor = self.round_significant(A_bar[i][k] / A_bar[k][k])
                 L[i][k] = factor  # to store factors
-                A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                tempRow = self.round_significant(factor * A_bar[k, k:])
+                A_bar[i, k:] = self.round_significant(A_bar[i, k:] - tempRow)
                 
         if self.isSingular(A_bar[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
@@ -78,7 +79,7 @@ class DoolittleLUDecomposition(DirectSolver):
 
         y = self.forward_substitution(L, b_bar)  # result of the system Ly = b
         solution = self.backward_substitution(U, y)  # result of Ux = y
-        return np.round(solution, decimals=self.precision)
+        return solution
 
 
 class CroutLUDecomposition(DirectSolver):
@@ -108,9 +109,10 @@ class CroutLUDecomposition(DirectSolver):
             if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot is zero)
                 raise ValueError("Matrix is singular or near-singular.")
             for i in range(k + 1, n):  # row traverse (apply the elimination for specific row)
-                factor = A_bar[i][k] / A_bar[k][k]
+                factor = self.round_significant(A_bar[i][k] / A_bar[k][k])
                 L[i][k] = factor  # to store factors
-                A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                tempRow = self.round_significant(factor * A_bar[k, k:])
+                A_bar[i, k:] = self.round_significant(A_bar[i, k:] - tempRow)
                 
         if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
@@ -129,7 +131,7 @@ class CroutLUDecomposition(DirectSolver):
         for i in range(n):
             Ordered_solution[o[i]] = UnOrdered_solution[i]
 
-        return np.round(Ordered_solution, decimals=self.precision)
+        return Ordered_solution
 
    
 class CholeskyLUDecomposition(DirectSolver): 
@@ -145,11 +147,13 @@ class CholeskyLUDecomposition(DirectSolver):
         
         for k in range(0, n):
             for i in range(0, k): # calculate the elements below the diagonal
-                A_bar[k][i] = np.round((A_bar[k][i] - np.sum(A_bar[i, :i]*A_bar[k, :i])) / A_bar[i][i], decimals=self.precision)
+                sum = np.sum(self.round_significant(A_bar[k, :i] * A_bar[i, :i]))
+                A_bar[k][i] = self.round_significant(self.round_significant(A_bar[k][i] - sum) / A_bar[i][i])
                 A_bar[i][k] = A_bar[k][i]
                 
             # Compute diagonal elements
-            A_bar[k][k] = np.round(np.sqrt(A_bar[k][k] - np.sum(A_bar[k, :k]**2)), decimals=self.precision)
+            sum = np.sum(self.round_significant(A_bar[k, :k]**2))
+            A_bar[k][k] = self.round_significant(np.sqrt(self.round_significant(A_bar[k][k] - sum)))
             
             if np.isclose(A_bar[k][k], 0):  # Check for singularity
                 raise ValueError("Matrix is singular or near-singular")
@@ -158,4 +162,4 @@ class CholeskyLUDecomposition(DirectSolver):
             
         y = self.forward_substitution(np.tril(A_bar), b_bar)
         x = self.backward_substitution(np.triu(A_bar), y)
-        return np.round(x, decimals=self.precision)
+        return x
