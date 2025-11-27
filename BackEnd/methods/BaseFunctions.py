@@ -179,7 +179,7 @@ class IterativeSolver(LineraSolver):
             while self.num_of_ites < 50:
                 x_new = self.iterate(self.A, self.b, x_old)
                 self.num_of_ites += 1
-                if self.calculate_error(x_old, x_new) < self.abs_rel_error:
+                if np.max(self.calculate_error(x_old, x_new) < self.abs_rel_error):
                     return x_new
                 x_old = x_new.copy()
                 
@@ -188,3 +188,6 @@ class IterativeSolver(LineraSolver):
 
     def calculate_error(self, x_old, x_new):
         return np.max(np.abs(x_new - x_old) / max(np.abs(x_new), 1e-12)) * 100
+    
+    def calculate_individual_error(self, x_old : float, x_new : float):
+        return (np.abs(x_new - x_old) / max(np.abs(x_new), 1e-12)) * 100
