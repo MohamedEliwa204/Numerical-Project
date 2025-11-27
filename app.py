@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from methods import *
+from BackEnd.methods import *
 import numpy as np
 import time
 
