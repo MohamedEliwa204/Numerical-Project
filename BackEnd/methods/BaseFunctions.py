@@ -14,6 +14,25 @@ class LineraSolver(ABC):
         self.precision = precision
         self.steps = []
 
+    def round_significant(self, value):
+        x = np.array(value, dtype=float)
+
+        if np.isscalar(x):
+            if x == 0:
+                return 0
+            else:
+                digits = self.precision - int(np.floor(np.log10(abs(x)))) - 1
+                return round(x, digits)
+        else:
+            rounded_array = np.zeros_like(x)
+            for index, val in np.ndenumerate(x):
+                if val == 0:
+                    rounded_array[index] = 0
+                else:
+                    digits = self.precision - int(np.floor(np.log10(abs(val)))) - 1
+                    rounded_array[index] = round(val, digits)
+            return rounded_array
+
     @abstractmethod
     def solve(self):
         pass
@@ -87,9 +106,14 @@ class DirectSolver(LineraSolver):
                 raise ValueError(f"Matrix is singular or near-singular at index {k}")
             
             for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
-                factor = A[i][k] / A[k][k]
-                A[i, k:] = np.round(A[i, k:] - factor * A[k, k:], decimals=self.precision)
-                b[i] = np.round(b[i] - (factor * b[k]), decimals=self.precision)
+                factor = self.round_significant(A[i][k] / A[k][k])
+
+                tempRow = self.round_significant(factor * A[k, k:])
+                A[i, k:] = self.round_significant(A[i, k:] - tempRow)
+
+                temp = self.round_significant(factor * b[k])
+                b[i] = self.round_significant(b[i] - temp)
+
                 self.steps.append((A.copy(), b.copy()))
         
         if self.isSingular(A[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
@@ -100,37 +124,42 @@ class DirectSolver(LineraSolver):
 
         for k in range(n - 1, -1, -1):
             pivot = A[k][k]
-            A[k] = A[k] / pivot
-            b[k] = b[k] / pivot
+            A[k] = self.round_significant(A[k] / pivot)
+            b[k] = self.round_significant(b[k] / pivot)
             for i in range(0, k):
                 factor = A[i][k]
-                A[i] = A[i] - factor * A[k]
-                b[i] = b[i] - factor * b[k]
+                
+                tempRow = self.round_significant(factor * A[k])
+                A[i] = self.round_significant(A[i] - tempRow)
+
+                temp = self.round_significant(factor * b[k])
+                b[i] = self.round_significant(b[i] - temp)
+
                 self.steps.append((A.copy(), b.copy()))
 
     def forward_substitution(self, L, b):
         n = L.shape[0]
         x = np.zeros(n)
-        x[0] = b[0] / L[0][0]
+        x[0] = self.round_significant(b[0] / L[0][0])
         for i in range(1, n):  # row traverse forward
             sum = 0
             for j in range(0, i):  # column traverse backward
-                sum = sum + (x[j] * L[i][j])
+                sum = self.round_significant(sum + self.round_significant(x[j] * L[i][j]))
 
-            x[i] = (b[i] - sum) / L[i][i]
+            x[i] = self.round_significant(self.round_significant(b[i] - sum) / L[i][i])
 
         return x
 
     def backward_substitution(self, A, b):
         n = A.shape[0]
         x = np.zeros(n)
-        x[n - 1] = b[n - 1] / A[n - 1][n - 1]
+        x[n - 1] = self.round_significant(b[n - 1] / A[n - 1][n - 1])
         for i in range(n - 2, -1, -1):  # row traverse backward
             sum = 0
             for j in range(i + 1, n):  # column traverse forward
-                sum = sum + (x[j] * A[i][j])
+                sum = self.round_significant(sum + self.round_significant(x[j] * A[i][j]))
 
-            x[i] = (b[i] - sum) / A[i][i]
+            x[i] = self.round_significant(self.round_significant(b[i] - sum) / A[i][i])
 
         return x
 
