@@ -26,6 +26,11 @@ export class App {
   executionTime = signal(0);
   iterations = signal(0);
 
+  errorHappened = signal<boolean>(false)
+  errorMessage = signal<string>("")
+
+  num_of_ites_condition = signal<boolean>(true)
+
   constructor(
     private api: SolverService
   ) { }
@@ -38,6 +43,7 @@ export class App {
 
   onSolve(params: SolverParams) {
     // const startTime = performance.now();
+    this.errorHappened.set(false)
 
     let methodUsed: string = 'GaussElimination'
     switch (this.selectedMethod()) {
@@ -81,8 +87,8 @@ export class App {
       precision: this.precision(),
       withScaling: params.useScaling,
       initial_guess: params.initialGuess,
-      num_of_ites: params.maxIterations,
-      abs_rel_error: params.tolerance
+      num_of_ites: (this.num_of_ites_condition()) ? params.maxIterations : undefined,
+      abs_rel_error: (!this.num_of_ites_condition()) ? params.tolerance : undefined
     }
 
     this.api.getSolution(dataSent).subscribe({
@@ -95,13 +101,18 @@ export class App {
         this.solution.set(result);
 
         this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
-          ? params.maxIterations : 0);
+          ? response.num_of_ites?? params.maxIterations : 0);
 
         // const endTime = performance.now();
         this.executionTime.set(parseFloat(response.executionTime.toFixed(12)));
       },
       error: (error) => {
+        console.log("ERROR")
+        console.log(error)
         console.error('Error Sending Solution Request:', error.error.error);
+        this.errorHappened.set(true)
+        this.solution.set([])
+        this.errorMessage.set(error.error.error)
       }
     })
   }

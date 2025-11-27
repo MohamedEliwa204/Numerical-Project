@@ -19,7 +19,7 @@
 
         <div class="input-block">
             <label class="param-label">Stopping Condition</label>
-            <select [ngModel]="stopCondition()" (ngModelChange)="stopCondition.set($event)" class="param-select">
+            <select [ngModel]="stopCondition()" (ngModelChange)="stopCondition.set($event); num_of_ites_condition.emit((stopCondition() === 'Number of Iterations') ? true : false)" class="param-select">
                 <option value="Number of Iterations">Number of Iterations</option>
                 <option value="Absolute Relative Error">Absolute Relative Error</option>
             </select>
@@ -69,7 +69,7 @@
     }
 
     <!-- Scaling Checkbox: Show for non-iterative methods -->
-    @if (!isIterative) {
+    @if (!isIterative && !(luForm() === 'Crout' || luForm() === 'Cholesky')) {
     <div class="params-group animate-fade">
         <label class="checkbox-container">
             <input type="checkbox" [ngModel]="useScaling()" (ngModelChange)="useScaling.set($event)">
