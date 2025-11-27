@@ -30,6 +30,7 @@ def solve_system():
         num_of_ites = data.get('num_of_ites')
         abs_rel_error = data.get('abs_rel_error')
         withScaling = data.get('scaling', False)
+        n = data.get('n')
         factory: AbstractSolverFactory = None
         solver = None
         if mode == "numerical":
@@ -46,7 +47,7 @@ def solve_system():
             )
         if mode == "symbolic":
             factory = SymbolicSolverFactory()
-            solver = factory.create_solver(method, A.shape[0])
+            solver = factory.create_solver(method, n)
         # match method:
         #     case 'GaussElimination':
         #         solver = GaussElimination(A, b, precision, withScaling)
