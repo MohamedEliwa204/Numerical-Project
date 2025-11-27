@@ -21,8 +21,8 @@ def solve_system():
         except:
             return jsonify({'error': 'The input is not valid JSON'}), 400
 
-        A = np.array(data['A'])
-        b = np.array(data['b'])
+        A = np.array(data['A']) if data['A'] else None
+        b = np.array(data['b']) if data['b'] else None
         mode = data.get('mode')
         method = data.get('method')
         precision = data.get('precision', 5)
