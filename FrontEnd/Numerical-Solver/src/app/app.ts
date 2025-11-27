@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, signal } from '@angular/core';
+import {Component, computed, effect, signal} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Sidebar } from './sidebar/sidebar';
 import { MatrixInput } from './matrix-input/matrix-input';
@@ -11,7 +11,7 @@ import {StepsPanel} from './steps-panel/steps-panel';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, Sidebar, MatrixInput, Parameters, StepsPanel],
+  imports: [CommonModule, Sidebar, MatrixInput, Parameters,StepsPanel],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -26,6 +26,12 @@ export class App {
   solution = signal<string[] | null>(null);
   executionTime = signal(0);
   iterations = signal(0);
+  simulationSteps = signal<SimulationStep[]>([]);
+
+  isIterativeMethod = computed(() => {
+    const m = this.selectedMethod();
+    return m === 'Gauss-Seidel' || m === 'Jacobi-Iteration';
+  });
 
   constructor(
     private api : SolverService
@@ -39,6 +45,9 @@ export class App {
 
   onSolve(params: SolverParams) {
     const startTime = performance.now();
+    this.simulationSteps.set([]);
+    const isIterative = this.isIterativeMethod();
+    let mockSteps: SimulationStep[] = [];
 
     let methodUsed: string = 'GaussElimination'
     switch (this.selectedMethod()) {
@@ -87,7 +96,8 @@ export class App {
     }
 
     setTimeout(() => {
-      let response : ResponseData = {solution : [], executionTime : -1, num_of_ites : -1, steps:[]};
+      let responseSteps: SimulationStep[] = [];
+      let response : ResponseData = {solution : [], executionTime : -1, num_of_ites : -1, steps:responseSteps};
 
       this.api.getSolution(dataSent).subscribe({
         next: (actual_response) => {
@@ -112,6 +122,7 @@ export class App {
 
       this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
         ? params.maxIterations : 0);
+      mockSteps=response.steps;
 
       const endTime = performance.now();
       this.executionTime.set(parseFloat(response.executionTime.toFixed(2)));

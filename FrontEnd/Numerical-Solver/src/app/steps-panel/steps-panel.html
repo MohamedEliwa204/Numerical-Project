@@ -1,62 +1,93 @@
-@if (solved) {
 
-  <div class="iteration-panel">
-
-    <div class="iteration-header">
-      <h2>Iteration Steps</h2>
-
-      <div class="iteration-controls">
-        <button (click)="prevStep()" [disabled]="currentIndex === 0">Previous</button>
-        <span class="step-counter">Step {{ currentIndex + 1 }} / {{ iterations.length }}</span>
-        <button (click)="nextStep()" [disabled]="currentIndex === iterations.length - 1">Next</button>
-      </div>
+<div class="steps-container">
+  <div class="steps-header">
+    <h3 class="steps-title">Simulation Steps</h3>
+    <div class="steps-counter">
+      Step {{ currentIndex() + 1 }} of {{ steps.length }}
     </div>
+  </div>
 
-    @if (iterations.length > 0) {
-      <div class="iteration-body">
+  <div class="steps-body">
+    <div class="step-content">
 
-        <div class="matrix-display">
+      <!-- ITERATIVE METHODS VIEW -->
+      @if (isIterative) {
+        <div class="iterative-layout">
+          <!-- Solution Vector -->
+          <div class="vector-group">
+            <div class="group-label">Iteration Solution (x<sup>{{currentIndex()}}</sup>)</div>
+            <div class="vector-display solution-style">
+              @for (val of currentIterativeStep()[0]; track $index) {
+                <div class="vector-cell">{{ val | number:'1.4-4' }}</div>
+              }
+            </div>
+          </div>
 
+          <!-- Divider -->
+          <div class="divider"></div>
+
+          <!-- Error Vector -->
+          <div class="vector-group">
+            <div class="group-label error-label">Relative Errors</div>
+            <div class="vector-display error-style">
+              @for (val of currentIterativeStep()[1]; track $index) {
+                <div class="vector-cell">{{ val | number:'1.6-6' }}%</div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- DIRECT METHODS VIEW -->
+      @else {
+        <div class="direct-layout">
           <!-- Matrix A -->
-          <div class="matrix-block">
-            <div class="matrix-title">Matrix A</div>
-
-            <div class="matrix">
-              @for (row of iterations[currentIndex].A; track i; let i = $index) {
-                <div class="matrix-row">
-                  @for (val of row; track j; let j = $index) {
-                    <div class="matrix-cell">{{ val }}</div>
+          <div class="matrix-group">
+            <div class="group-label">Matrix State</div>
+            <div class="matrix-grid">
+              @for (row of currentDirectStep()[0]; track $index) {
+                <div class="matrix-row-display">
+                  @for (val of row; track $index) {
+                    <div class="matrix-cell">{{ val | number:'1.2-2' }}</div>
                   }
                 </div>
               }
             </div>
           </div>
 
-          <div class="augmented-symbol">|</div>
-
-          <!-- Vector B -->
-          <div class="matrix-block">
-            <div class="matrix-title">Vector B</div>
-
-            <div class="matrix">
-              @for (val of iterations[currentIndex].B; track k; let k = $index) {
-                <div class="matrix-row">
-                  <div class="matrix-cell">{{ val }}</div>
-                </div>
+          <!-- Vector B (Augmented part) -->
+          <div class="vector-group b-vector">
+            <div class="group-label">Vector B</div>
+            <div class="vector-column">
+              @for (val of currentDirectStep()[1]; track $index) {
+                <div class="vector-cell">{{ val | number:'1.2-2' }}</div>
               }
             </div>
           </div>
-
         </div>
-      </div>
-    }
-
-    @if (iterations.length === 0) {
-      <div class="no-data">
-        No iteration results loaded yet.
-      </div>
-    }
-
+      }
+    </div>
   </div>
 
-}
+  <div class="steps-controls">
+    <button
+      class="nav-btn prev"
+      [disabled]="currentIndex() === 0"
+      (click)="prevStep()">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      Previous
+    </button>
+
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="((currentIndex() + 1) / steps.length) * 100"></div>
+    </div>
+
+    <button
+      class="nav-btn next"
+      [disabled]="currentIndex() === steps.length - 1"
+      (click)="nextStep()">
+      Next
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+    </button>
+  </div>
+</div>

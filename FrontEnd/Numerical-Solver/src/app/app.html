@@ -61,6 +61,13 @@
             }
           </div>
         </div>
+          <!-- Steps Panel (Only visible if we have steps) -->
+          @if (simulationSteps().length > 0) {
+            <steps-panel
+              [steps]="simulationSteps()"
+              [isIterative]="isIterativeMethod()">
+            </steps-panel>
+          }
         }
       </div>
 
@@ -69,7 +76,7 @@
         <app-parameters [method]="selectedMethod()" [size]="numEquations()" (solve)="onSolve($event)">
         </app-parameters>
       </div>
-      <app-steps-panel></app-steps-panel>
+
 
     </div>
   </main>
