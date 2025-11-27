@@ -94,7 +94,7 @@ class DirectSolver(LineraSolver):
                 A[i, k:] = np.round(A[i, k:] - factor * A[k, k:], decimals=self.precision)
                 b[i] = np.round(b[i] - (factor * b[k]), decimals=self.precision)
                 self.describitive_steps.append(
-                    f"R{i + 1} ← R{i + 1} - ({factor}) * R{k + 1}"
+                    f"R{i + 1} ← R{i + 1} - ({np.round(factor, decimals=self.precision)}) * R{k + 1}"
                 )
                 self.steps.append((A.copy(), b.copy()))
         
@@ -117,7 +117,7 @@ class DirectSolver(LineraSolver):
                 A[i] = A[i] - factor * A[k]
                 b[i] = b[i] - factor * b[k]
                 self.describitive_steps.append(
-                    f"R{i + 1} ← R{i + 1} - ({factor}) * R{k + 1}"
+                    f"R{i + 1} ← R{i + 1} - ({np.round(factor, decimals=self.precision)}) * R{k + 1}"
                 )
                 self.steps.append((A.copy(), b.copy()))
 

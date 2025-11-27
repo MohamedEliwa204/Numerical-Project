@@ -44,6 +44,8 @@ class DoolittleLUDecomposition(DirectSolver):
 
         n = A_bar.shape[0]
         L = np.zeros((n, n))
+        for d in range(n):
+            L[d][d] = 1
         
         # compute scaling if needed and raise error for singularity
         self.scaling(A_bar) if self.withScaling else None
@@ -104,6 +106,7 @@ class CroutLUDecomposition(DirectSolver):
         n = A_bar.shape[0]
         L = np.zeros((n, n))
         o = np.arange(n)   # To track the order of solution
+        np.fill_diagonal(L, 1)
 
         for k in range(0, n - 1):  # we need custom pivoting method so we don't touch b matrix
             max_index = k
@@ -124,16 +127,20 @@ class CroutLUDecomposition(DirectSolver):
                 factor = A_bar[i][k] / A_bar[k][k]
                 L[i][k] = factor  # to store factors
                 A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
-                self.steps.append((A_bar.copy().T, L.copy().T))
+                # For steps: L.T becomes U_Crout, so we need 1s on L's diagonal for U to have 1s on diagonal
+                L_step = L.copy()
+                np.fill_diagonal(L_step, 1)
+                self.steps.append((A_bar.copy().T, L_step.T))
                 
         if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
 
-        np.fill_diagonal(L, 1)
+        # For Crout: L has the factors, U has 1s on diagonal
+        np.fill_diagonal(L, 1)  # This becomes U_Crout after transpose
         U = A_bar
 
-        L_Crout = U.T
-        U_Crout = L.T
+        L_Crout = U.T   # Lower triangular with computed values
+        U_Crout = L.T   # Upper triangular with 1s on diagonal
 
         y = self.forward_substitution(L_Crout, b_bar) # result of the system Ly = b
         UnOrdered_solution = self.backward_substitution(U_Crout, y)  # result of Ux = y

@@ -90,4 +90,26 @@ export class StepsPanel {
     }
     return null;
   }
+
+  parseMathParts(text: string) {
+    const parts: { text: string; isVar: boolean; base?: string; sub?: string }[] = [];
+    const regex = /([XYR])(\d+)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      // Push text before match
+      if (match.index > lastIndex) {
+        parts.push({ text: text.substring(lastIndex, match.index), isVar: false });
+      }
+      // Push match
+      parts.push({ text: match[0], isVar: true, base: match[1], sub: match[2] });
+      lastIndex = regex.lastIndex;
+    }
+    // Push remaining text
+    if (lastIndex < text.length) {
+      parts.push({ text: text.substring(lastIndex), isVar: false });
+    }
+    return parts;
+  }
 }

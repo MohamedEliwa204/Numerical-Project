@@ -6,10 +6,16 @@
     </div>
   </div>
 
+  <!-- Descriptive Step Text -->
   @if (descriptions[currentIndex()]) {
   <div class="description-bar">
     <div class="info-icon">ℹ️</div>
-    <div class="description-text">{{ descriptions[currentIndex()] }}</div>
+    <div class="description-text">
+      @for (part of parseMathParts(descriptions[currentIndex()]); track $index) {
+      @if (part.isVar) { <span>{{part.base}}<sub>{{part.sub}}</sub></span> }
+      @else { <span>{{part.text}}</span> }
+      }
+    </div>
   </div>
   }
 
@@ -24,14 +30,38 @@
           @for (eq of asEquationStep(currentStep()).equations; track $index) {
           <div class="equation-row">
             @if (parseEquation(eq); as parsed) {
-            <span class="var">{{ parsed.variable }}</span>
+            <!-- Use parseMathParts to render LHS variable with subscripts -->
+            <span class="var">
+              @for (part of parseMathParts(parsed.variable); track $index) {
+              @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+              @else { {{part.text}} }
+              }
+            </span>
             <span class="eq-symbol">=</span>
             <div class="fraction">
-              <span class="numerator">{{ parsed.numerator }}</span>
-              <span class="denominator">{{ parsed.denominator }}</span>
+              <span class="numerator">
+                <!-- Use parseMathParts to render numerator with subscripts -->
+                @for (part of parseMathParts(parsed.numerator); track $index) {
+                @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+                @else { {{part.text}} }
+                }
+              </span>
+              <span class="denominator">
+                <!-- Use parseMathParts to render denominator with subscripts -->
+                @for (part of parseMathParts(parsed.denominator); track $index) {
+                @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+                @else { {{part.text}} }
+                }
+              </span>
             </div>
             <span class="eq-symbol">=</span>
-            <span class="result">{{ parsed.result }}</span>
+            <span class="result">
+              <!-- Use parseMathParts to render result with subscripts -->
+              @for (part of parseMathParts(parsed.result); track $index) {
+              @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+              @else { {{part.text}} }
+              }
+            </span>
             } @else {
             <span class="raw-eq">{{ eq }}</span>
             }
@@ -80,7 +110,7 @@
       @else if (isIterative) {
       <div class="iterative-layout">
         <div class="vector-group">
-          <div class="group-label">Iteration Solution (x<sup>{{currentIndex()}}</sup>)</div>
+          <div class="group-label">Iteration Solution (x<sup>{{currentIndex() + 1}}</sup>)</div>
           <div class="vector-display solution-style">
             @for (val of asIterativeStep(currentStep())[0]; track $index) {
             <div class="vector-cell">{{ val }}</div>

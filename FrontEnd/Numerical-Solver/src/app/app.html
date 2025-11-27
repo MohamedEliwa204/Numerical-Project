@@ -73,7 +73,7 @@
           <div class="solution-grid">
             @for (x of solution(); track i; let i = $index) {
             <div class="solution-item">
-              <div class="solution-label">x{{i+1}}</div>
+              <div class="solution-label">x<sub>{{i+1}}</sub></div>
               <div class="solution-value">{{ x }}</div>
             </div>
             }

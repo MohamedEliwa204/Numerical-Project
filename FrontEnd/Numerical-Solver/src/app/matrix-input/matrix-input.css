@@ -107,29 +107,47 @@
     min-width: 100%;
 }
 
-.equation-grid {
-    display: flex;
-    gap: 1rem;
-}
-
-.matrix-block,
-.vector-block {
+.matrix-table {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-.matrix-label {
+.headers-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.25rem;
+    padding-right: 1rem;
+}
+
+.eqn-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.a-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.b-group {
+    display: flex;
+}
+
+.spacer-label {
+    width: 2rem;
+}
+
+.center-text {
     text-align: center;
+}
+
+.matrix-label {
     font-size: 0.75rem;
     font-weight: 700;
     color: #94a3b8;
-    margin-bottom: 0.25rem;
-}
-
-.matrix-row {
-    display: flex;
-    gap: 0.5rem;
+    text-transform: uppercase;
 }
 
 .cell-wrapper {
@@ -155,7 +173,6 @@
 
 .matrix-input {
     width: 6rem;
-    /* Increased width for symbolic input */
     height: 3rem;
     text-align: center;
     border: 1px solid #cbd5e1;
@@ -176,14 +193,7 @@
     background-color: #fef2f2;
 }
 
-.equals-column {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-top: 2rem;
-}
-
-.equals-symbol {
+.eq-symbol {
     height: 3rem;
     width: 2rem;
     display: flex;
@@ -193,14 +203,9 @@
     font-weight: bold;
 }
 
-.vector-row {
-    height: 3rem;
-}
-
 .vector-input {
     width: 6rem;
-    /* Increased width */
-    height: 100%;
+    height: 3rem;
     text-align: center;
     border: 1px solid #bfdbfe;
     border-radius: 0.25rem;

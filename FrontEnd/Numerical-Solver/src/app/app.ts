@@ -120,7 +120,29 @@ export class App {
         this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
           ? response.num_of_ites ?? params.maxIterations : 0);
         // mockSteps = response.steps;
-        this.simulationSteps.set(response.steps)
+        switch (this.selectedMethod()) {
+          case 'Gauss Elimination':
+            this.simulationSteps.set(response.steps as DirectStep[])
+            break;
+          case 'Gauss-Jordan':
+            this.simulationSteps.set(response.steps as DirectStep[])
+            break;
+          case 'LU Decomposition':
+            // Backend sends [L, U] arrays, transform to { type: 'lu', L, U } objects
+            const luSteps: LUStep[] = response.steps.map((step: any) => ({
+              type: 'lu' as const,
+              L: step[0],
+              U: step[1]
+            }));
+            this.simulationSteps.set(luSteps);
+            break;
+          case 'Gauss-Seidel':
+            this.simulationSteps.set(response.steps as IterativeStep[])
+            break;
+          case 'Jacobi-Iteration':
+            this.simulationSteps.set(response.steps as IterativeStep[])
+            break;
+        }
         this.stepDescriptions.set(response.steps_descriptions)
         this.xsEquations.set(response.Xs_steps);
         this.ysEquations.set(response.Ys_steps);
