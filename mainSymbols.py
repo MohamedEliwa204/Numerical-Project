@@ -38,6 +38,24 @@ class SymDirectSolver(SymLinearSolver):
 
         return aug
 
+    def backward_elimination(self, A: sp.Matrix, b: sp.Matrix):
+        aug = A.row_join(b)
+
+        for i in reversed(range(self.n)):
+            pivot = aug[i, i]
+
+            if pivot == 0:
+                continue
+
+            for r in range(i - 1, -1, -1):  # rows above the pivot
+                factor = aug[r, i] / pivot
+                self.describitive_steps.append(
+                    f"R{r + 1} ← R{r + 1} - ({factor}) * R{i + 1}"
+                )
+                aug[r, :] = aug[r, :] - factor * aug[i, :]
+                self.steps.append(aug.copy())
+        return aug
+
     def forward_substitution(self, L: sp.Matrix, b: sp.Matrix):
         n = L.rows
         x = sp.Matrix(sp.symbols(f"x0:{n}"))
@@ -74,13 +92,26 @@ class SymDirectSolver(SymLinearSolver):
 class SymGaussElimination(SymDirectSolver):
     @override
     def solve(self):
-        pass
+        A_bar = self.A.copy()
+        b_bar = self.b.copy()
+        aug = self.forward_elimination(A_bar, b_bar)
+        U = aug[:, :self.n]  # first n columns
+        b_new = aug[:, self.n:]  # last column
+        solution = self.backward_substitution(U, b_new)
+        return solution
 
 
 class SymGaussJordan(SymDirectSolver):
     @override
     def solve(self):
-        pass
+        A_bar = self.A.copy()
+        b_bar = self.b.copy()
+        aug = self.forward_elimination(A_bar, b_bar)
+        U = aug[:, :self.n]
+        b_new = aug[:, self.n:]
+        aug = self.backward_elimination(U, b_new)
+        solution = aug[:, self.n:]
+        return solution
 
 
 class SymIterativeSolver(SymLinearSolver):
@@ -103,4 +134,3 @@ class SymJacobiIteration(SymIterativeSolver):
     @override
     def iterate(self):
         pass
-
