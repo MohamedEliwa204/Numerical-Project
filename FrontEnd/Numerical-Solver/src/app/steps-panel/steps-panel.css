@@ -1,0 +1,205 @@
+
+.steps-container {
+  margin-top: 1.5rem;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.steps-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.steps-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.steps-counter {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  background: #e2e8f0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+}
+.steps-body {
+  padding: 2rem;
+  background-color: #ffffff;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.step-content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Iterative Layout */
+.iterative-layout {
+  display: flex;
+  gap: 3rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.divider {
+  width: 1px;
+  background-color: #e2e8f0;
+  align-self: stretch;
+  min-height: 100px;
+}
+
+/* Direct Layout */
+.direct-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+/* Common Groups */
+.vector-group, .matrix-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.group-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+.error-label {
+  color: #ef4444;
+}
+
+/* Matrices & Vectors */
+.matrix-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-left: 2px solid #334155;
+  border-right: 2px solid #334155;
+  border-radius: 0.25rem;
+}
+.matrix-row-display {
+  display: flex;
+  gap: 0.5rem;
+}
+.matrix-cell {
+  width: 4rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+  font-size: 0.875rem;
+  background-color: #f1f5f9;
+  border-radius: 0.25rem;
+  color: #1e293b;
+}
+.vector-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-left: 2px solid #3b82f6;
+  border-right: 2px solid #3b82f6;
+  border-radius: 0.25rem;
+}
+.vector-display {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.vector-cell {
+  padding: 0.5rem 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-weight: 500;
+  min-width: 5rem;
+  text-align: center;
+}
+.solution-style .vector-cell {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e3a8a;
+}
+.error-style .vector-cell {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+/* Controls */
+.steps-controls {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  border: 1px solid #cbd5e1;
+  background-color: white;
+  color: #334155;
+  cursor: pointer;
+}
+.nav-btn:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+.nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #e2e8f0;
+}
+.nav-btn.next {
+  background-color: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+.nav-btn.next:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+.progress-bar {
+  flex: 1;
+  height: 0.25rem;
+  background-color: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  transition: width 0.3s ease;
+}

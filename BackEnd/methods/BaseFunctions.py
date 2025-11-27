@@ -90,6 +90,7 @@ class DirectSolver(LineraSolver):
                 factor = A[i][k] / A[k][k]
                 A[i, k:] = np.round(A[i, k:] - factor * A[k, k:], decimals=self.precision)
                 b[i] = np.round(b[i] - (factor * b[k]), decimals=self.precision)
+                self.steps.append((A.copy(), b.copy()))
         
         if self.isSingular(A[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular") 
@@ -105,6 +106,7 @@ class DirectSolver(LineraSolver):
                 factor = A[i][k]
                 A[i] = A[i] - factor * A[k]
                 b[i] = b[i] - factor * b[k]
+                self.steps.append((A.copy(), b.copy()))
 
     def forward_substitution(self, L, b):
         n = L.shape[0]
@@ -153,6 +155,7 @@ class IterativeSolver(LineraSolver):
 
     @override
     def solve(self):
+        self.steps.clear()
         i = 0
         x_old = self.initial_guess.copy()
         x_new = self.initial_guess.copy()

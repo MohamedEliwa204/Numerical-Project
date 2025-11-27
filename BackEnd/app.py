@@ -48,6 +48,7 @@ def solve_system():
         
         try:
             solution = solver.solve()
+
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
         
@@ -67,7 +68,8 @@ def solve_system():
         return jsonify({
             'solution': solution.tolist(),
             'executionTime': executionTime,
-            'num_of_ites': getattr(solver, 'num_of_ites', None)
+            'num_of_ites': getattr(solver, 'num_of_ites', None),
+            'steps': getattr(solver, 'steps', None)
         })
             
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, signal } from '@angular/core';
+import {Component, computed, effect, signal} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Sidebar } from './sidebar/sidebar';
 import { MatrixInput } from './matrix-input/matrix-input';
@@ -7,10 +7,11 @@ import { Parameters } from './parameters/parameters';
 import { ResponseData } from './models/response-data';
 import { RequestData } from './models/request-data';
 import { SolverService } from './services/solver-service';
+import {StepsPanel} from './steps-panel/steps-panel';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, Sidebar, MatrixInput, Parameters],
+  imports: [CommonModule, Sidebar, MatrixInput, Parameters,StepsPanel],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -30,10 +31,16 @@ export class App {
   errorMessage = signal<string>("")
 
   num_of_ites_condition = signal<boolean>(true)
+  simulationSteps = signal<SimulationStep[]>([]);
+
+  isIterativeMethod = computed(() => {
+    const m = this.selectedMethod();
+    return m === 'Gauss-Seidel' || m === 'Jacobi-Iteration';
+  });
 
   constructor(
-    private api: SolverService
-  ) { }
+    private api : SolverService
+  ) {}
 
   onMatrixDataChange(data: { A: number[][], B: number[], precision: number }) {
     this.matrixA.set(data.A);
@@ -42,8 +49,11 @@ export class App {
   }
 
   onSolve(params: SolverParams) {
-    // const startTime = performance.now();
+    const startTime = performance.now();
     this.errorHappened.set(false)
+    this.simulationSteps.set([]);
+    const isIterative = this.isIterativeMethod();
+    let mockSteps: SimulationStep[] = [];
 
     let methodUsed: string = 'GaussElimination'
     switch (this.selectedMethod()) {
@@ -91,17 +101,34 @@ export class App {
       abs_rel_error: (!this.num_of_ites_condition()) ? params.tolerance : undefined
     }
 
-    this.api.getSolution(dataSent).subscribe({
-      next: (response) => {
+    setTimeout(() => {
+      let responseSteps: SimulationStep[] = [];
+      let response : ResponseData = {solution : [], executionTime : -1, num_of_ites : -1, steps:responseSteps};
+
+      this.api.getSolution(dataSent).subscribe({
+        next: (actual_response) => {
+        response = actual_response
         console.log('Response from Backend: ', response);
+      },
+      error: (error) => {
+        console.error('Error Sending Solution Request:', error);
+      }
+      })
 
-        const result = response.solution.map((val) => {
-          return val.toFixed(this.precision())
-        })
-        this.solution.set(result);
 
-        this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
+      // const result = Array(this.numEquations()).fill(0).map(() => {
+      //   const val = (Math.random() * 10) - 5;
+      //   return val.toFixed(this.precision());
+      // });
+
+      const result = response.solution.map((val) => {
+        return val.toFixed(this.precision())
+      })
+      this.solution.set(result);
+
+      this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
           ? response.num_of_ites?? params.maxIterations : 0);
+      mockSteps=response.steps;
 
         // const endTime = performance.now();
         this.executionTime.set(parseFloat(response.executionTime.toFixed(12)));

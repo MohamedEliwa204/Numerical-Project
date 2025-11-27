@@ -12,6 +12,7 @@ class LineraSolver(ABC):
         self.b = np.array(b, dtype=float)
         self.n = len(b)
         self.precision = precision
+        self.steps = []
 
     @abstractmethod
     def solve(self):
@@ -23,7 +24,8 @@ class DirectSolver(LineraSolver):
         super().__init__(A, b, precision)
         self.withScaling = withScaling
         self.scalar = None
-    
+
+
         
     def scaling(self, A):
         n = A.shape[0]
@@ -84,6 +86,7 @@ class DirectSolver(LineraSolver):
                 factor = A[i][k] / A[k][k]
                 A[i, k:] = np.round(A[i, k:] - factor * A[k, k:], decimals=self.precision)
                 b[i] = np.round(b[i] - (factor * b[k]), decimals=self.precision)
+                self.steps.append((A.copy(), b.copy()))
         
         if self.isSingular(A[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular") 
@@ -100,18 +103,22 @@ class DirectSolver(LineraSolver):
                 factor = A[i][k]
                 A[i] = A[i] - factor * A[k]
                 b[i] = b[i] - factor * b[k]
+                self.steps.append((A.copy(), b.copy()))
 
 
     def forward_substitution(self, L, b):
         n = L.shape[0]
         x = np.zeros(n)
         x[0] = b[0] / L[0][0]
+        self.steps.append(f"X0 ={x[0]}")
         for i in range(1, n):  # row traverse forward
             sum = 0
             for j in range(0, i):  # column traverse backward
                 sum = sum + (x[j] * L[i][j])
 
             x[i] = (b[i] - sum) / L[i][i]
+            self.steps.append(f"X{i} ={x[i]}")
+
 
         return x
 
@@ -120,12 +127,14 @@ class DirectSolver(LineraSolver):
         n = A.shape[0]
         x = np.zeros(n)
         x[n - 1] = b[n - 1] / A[n - 1][n - 1]
+        self.steps.append(f"X{n-1} ={x[n-1]}")
         for i in range(n - 2, -1, -1):  # row traverse backward
             sum = 0
             for j in range(i + 1, n):  # column traverse forward
                 sum = sum + (x[j] * A[i][j])
 
             x[i] = (b[i] - sum) / A[i][i]
+            self.steps.append(f"X{i} ={x[i]}")
 
         return x
 
@@ -133,6 +142,7 @@ class DirectSolver(LineraSolver):
 class GaussElimination(DirectSolver):
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
@@ -144,6 +154,7 @@ class GaussElimination(DirectSolver):
 class GaussJordan(DirectSolver):
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
@@ -157,6 +168,7 @@ class GaussJordan(DirectSolver):
 class DoolittleLUDecomposition(DirectSolver):
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
@@ -191,6 +203,7 @@ class DoolittleLUDecomposition(DirectSolver):
 class CroutLUDecomposition(DirectSolver):
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy().T  # use the transpose and apply same Doolittle logic
         b_bar = self.b.copy()
 
@@ -239,6 +252,7 @@ class CroutLUDecomposition(DirectSolver):
 class CholeskyLUDecomposition(DirectSolver):
     @override
     def solve(self):
+        self.steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
         n = A_bar.shape[0]
@@ -282,6 +296,7 @@ class IterativeSolver(LineraSolver):
 
     @override
     def solve(self):
+        self.steps.clear()
         i = 0
         x_old = self.initial_guess.copy()
         x_new = self.initial_guess.copy()
@@ -310,9 +325,15 @@ class GaussSeidel(IterativeSolver):
     def iterate(self, A, b, x):
         x_old = x.copy()
         x_new = x.copy()
+        relative_error =[]
+
 
         for k in range(0, self.n):
             x_new[k] = (b[k] - (np.dot(A[k, :k], x_new[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
+            relative_error.append(self.calculate_error(x_old, x_new))
+
+        self.steps.append((x_new.copy(),relative_error.copy()))
+
 
         return x_new
 
@@ -322,8 +343,14 @@ class JacobiIteration(IterativeSolver):
     def iterate(self, A, b, x):
         x_old = x.copy()
         x_new = np.zeros_like(x)
+        relative_error = []
+
 
         for k in range(0, self.n):
             x_new[k] = (b[k] - (np.dot(A[k, :k], x_old[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
+            relative_error.append(self.calculate_error(x_old, x_new))
+
+        self.steps.append((x_new.copy(), relative_error.copy()))
+
 
         return x_new
