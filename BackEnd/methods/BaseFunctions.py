@@ -102,6 +102,8 @@ class DirectSolver(LineraSolver):
             pivot = A[k][k]
             A[k] = A[k] / pivot
             b[k] = b[k] / pivot
+            if (k == 0):
+                self.steps.append((A.copy(), b.copy()))
             for i in range(0, k):
                 factor = A[i][k]
                 A[i] = A[i] - factor * A[k]
@@ -185,4 +187,4 @@ class IterativeSolver(LineraSolver):
                 raise ValueError("The method did not converge within 50 iterations")
 
     def calculate_error(self, x_old, x_new):
-        return np.max(np.abs(x_new - x_old) / np.maximum(np.abs(x_new), 1e-12)) * 100
+        return np.max(np.abs(x_new - x_old) / max(np.abs(x_new), 1e-12)) * 100

@@ -38,6 +38,7 @@
           </button>
         </div>
         } @else if (solution()) {
+        <!-- Solution Panel -->
         <div class="results-panel animate-slide-up">
           <div class="results-header">
             <div>
@@ -69,7 +70,6 @@
             </button>
           </div>
 
-          <!-- Solution Vector Display -->
           <div class="solution-grid">
             @for (x of solution(); track i; let i = $index) {
             <div class="solution-item">
@@ -79,13 +79,12 @@
             }
           </div>
         </div>
-          <!-- Steps Panel (Only visible if we have steps) -->
-          @if (simulationSteps().length > 0) {
-            <steps-panel
-              [steps]="simulationSteps()"
-              [isIterative]="isIterativeMethod()">
-            </steps-panel>
-          }
+
+        <!-- Steps Panel (Only visible if we have steps) -->
+        @if (simulationSteps().length > 0) {
+        <steps-panel [steps]="simulationSteps()" [isIterative]="isIterativeMethod()">
+        </steps-panel>
+        }
         }
       </div>
 
@@ -94,7 +93,6 @@
         <app-parameters [method]="selectedMethod()" [size]="numEquations()" (solve)="onSolve($event)" (num_of_ites_condition)="num_of_ites_condition.set($event)">
         </app-parameters>
       </div>
-
 
     </div>
   </main>

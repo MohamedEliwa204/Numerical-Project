@@ -1,5 +1,5 @@
-import {Component, computed, Input, signal} from '@angular/core';
-import {DecimalPipe} from '@angular/common';
+import { Component, computed, Input, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 
 @Component({
   selector: 'steps-panel',
@@ -11,7 +11,6 @@ import {DecimalPipe} from '@angular/common';
   styleUrls: ['./steps-panel.css']
 })
 export class StepsPanel {
-
   @Input({ required: true }) steps: SimulationStep[] = [];
   @Input({ required: true }) isIterative!: boolean;
 
@@ -36,5 +35,4 @@ export class StepsPanel {
       this.currentIndex.update(i => i - 1);
     }
   }
-
 }
