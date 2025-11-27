@@ -3,4 +3,7 @@ export interface ResponseData {
     executionTime : number,
     num_of_ites? : number,
     steps : SimulationStep[],
+    steps_descriptions : string[],
+    Xs_steps : string[],
+    Ys_steps : string[]
 }

@@ -20,8 +20,8 @@ export class App {
   selectedMethod = signal<MethodType>('Gauss Elimination');
   numEquations = signal(3);
 
-  matrixA = signal<number[][]>([]);
-  vectorB = signal<number[]>([]);
+  matrixA = signal<string[][]>([]);
+  vectorB = signal<string[]>([]);
   precision = signal<number>(4);
 
   solution = signal<string[] | null>(null);
@@ -33,6 +33,9 @@ export class App {
 
   num_of_ites_condition = signal<boolean>(true)
   simulationSteps = signal<SimulationStep[]>([]);
+  stepDescriptions = signal<string[]>([]);
+  xsEquations = signal<string[]>([]); // UPDATED
+  ysEquations = signal<string[]>([]); // UPDATED
 
   isIterativeMethod = computed(() => {
     const m = this.selectedMethod();
@@ -41,9 +44,9 @@ export class App {
 
   constructor(
     private api: SolverService
-  ) {}
+  ) { }
 
-  onMatrixDataChange(data: { A: number[][], B: number[], precision: number }) {
+  onMatrixDataChange(data: { A: string[][], B: string[], precision: number }) {
     this.matrixA.set(data.A);
     this.vectorB.set(data.B);
     this.precision.set(data.precision);
@@ -52,8 +55,12 @@ export class App {
   onSolve(params: SolverParams) {
     // const startTime = performance.now();
     this.errorHappened.set(false)
+    this.errorMessage.set('');
+    this.solution.set(null);
     this.simulationSteps.set([]);
-    // const isIterative = this.isIterativeMethod();
+    this.stepDescriptions.set([]);
+    this.xsEquations.set([]);
+    this.ysEquations.set([]);
 
     let methodUsed: string = 'GaussElimination'
     switch (this.selectedMethod()) {
@@ -101,11 +108,8 @@ export class App {
       abs_rel_error: (!this.num_of_ites_condition()) ? params.tolerance : undefined
     }
 
-    // let responseSteps: SimulationStep[] = [];
-    // let response : ResponseData = {solution : [], executionTime : -1, num_of_ites : -1, steps:responseSteps};
-
     this.api.getSolution(dataSent).subscribe({
-      next: (response) => {
+      next: (response: ResponseData) => {
         console.log('Response from Backend: ', response);
 
         const result = response.solution.map((val) => {
@@ -117,11 +121,14 @@ export class App {
           ? response.num_of_ites ?? params.maxIterations : 0);
         // mockSteps = response.steps;
         this.simulationSteps.set(response.steps)
+        this.stepDescriptions.set(response.steps_descriptions)
+        this.xsEquations.set(response.Xs_steps);
+        this.ysEquations.set(response.Ys_steps);
 
         // const endTime = performance.now();
         this.executionTime.set(parseFloat(response.executionTime.toFixed(12)));
       },
-      error: (error : HttpErrorResponse) => {
+      error: (error: HttpErrorResponse) => {
         console.log("ERROR")
         console.log(error)
         console.error('Error Sending Solution Request:', error.error.error);

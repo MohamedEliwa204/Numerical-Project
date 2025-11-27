@@ -5,12 +5,15 @@ type StopCondition = 'Number of Iterations' | 'Absolute Relative Error';
 // Step types based on user description
 // Direct: [Matrix(2D), Vector(1D)]
 // Iterative: [Solution(1D), Errors(1D)]
-type DirectStep = [number[][], number[]];
-type IterativeStep = [number[], number[]];
-type SimulationStep = DirectStep | IterativeStep;
+
+type DirectStep = [string[][], string[]];
+type IterativeStep = [string[], string[]];
+type LUStep = { type: 'lu', L: string[][], U: string[][] };
+type EquationStep = { type: 'eq', equations: string[], title: string };
+type SimulationStep = DirectStep | IterativeStep | LUStep | EquationStep;
 
 interface SolverParams {
-  initialGuess: number[];
+  initialGuess: string[]; // UPDATED
   tolerance: number;
   maxIterations: number;
   luForm: LUForm;

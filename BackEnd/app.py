@@ -77,7 +77,10 @@ def solve_system():
             'solution': solution.tolist(),
             'executionTime': executionTime,
             'num_of_ites': getattr(solver, 'num_of_ites', None),
-            'steps': formatted_steps
+            'steps': formatted_steps,
+            'steps_descriptions' : getattr(solver, 'describitive_steps', None),
+            'Xs_steps' : getattr(solver, 'Xs_steps', None),
+            'Ys_steps' : getattr(solver, 'Ys_steps', None)
         })
 
 if __name__ == '__main__':

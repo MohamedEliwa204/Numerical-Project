@@ -2,64 +2,123 @@
   <div class="steps-header">
     <h3 class="steps-title">Simulation Steps</h3>
     <div class="steps-counter">
-      Step {{ currentIndex() + 1 }} of {{ steps.length }}
+      Step {{ currentIndex() + 1 }} of {{ allSteps().length }}
     </div>
   </div>
+
+  @if (descriptions[currentIndex()]) {
+  <div class="description-bar">
+    <div class="info-icon">ℹ️</div>
+    <div class="description-text">{{ descriptions[currentIndex()] }}</div>
+  </div>
+  }
 
   <div class="steps-body">
     <div class="step-content">
 
-      <!-- ITERATIVE METHODS VIEW -->
-      @if (isIterative) {
-      <div class="iterative-layout">
-        <!-- Solution Vector -->
-        <div class="vector-group">
-          <div class="group-label">Iteration Solution (x<sup>{{currentIndex()}}</sup>)</div>
-          <div class="vector-display solution-style">
-            @for (val of currentIterativeStep()[0]; track $index) {
-            <div class="vector-cell">{{ val | number:'1.4-4' }}</div>
+      <!-- CASE 1: EQUATION STEPS (Substitution) -->
+      @if (isEquationStep(currentStep())) {
+      <div class="equation-layout">
+        <h4 class="eq-title">{{ asEquationStep(currentStep()).title }}</h4>
+        <div class="equations-list">
+          @for (eq of asEquationStep(currentStep()).equations; track $index) {
+          <div class="equation-row">
+            @if (parseEquation(eq); as parsed) {
+            <span class="var">{{ parsed.variable }}</span>
+            <span class="eq-symbol">=</span>
+            <div class="fraction">
+              <span class="numerator">{{ parsed.numerator }}</span>
+              <span class="denominator">{{ parsed.denominator }}</span>
+            </div>
+            <span class="eq-symbol">=</span>
+            <span class="result">{{ parsed.result }}</span>
+            } @else {
+            <span class="raw-eq">{{ eq }}</span>
             }
           </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="divider"></div>
-
-        <!-- Error Vector -->
-        <div class="vector-group">
-          <div class="group-label error-label">Relative Errors</div>
-          <div class="vector-display error-style">
-            @for (val of currentIterativeStep()[1]; track $index) {
-            <div class="vector-cell">{{ val | number:'1.6-6' }}%</div>
-            }
-          </div>
+          }
         </div>
       </div>
       }
 
-      <!-- DIRECT METHODS VIEW -->
-      @else {
-      <div class="direct-layout">
-        <!-- Matrix A -->
+      <!-- CASE 2: LU DECOMPOSITION (Side by Side) -->
+      @else if (isLUStep(currentStep())) {
+      <div class="lu-layout">
+        <!-- Matrix L -->
         <div class="matrix-group">
-          <div class="group-label">Matrix State</div>
+          <div class="group-label">Matrix L</div>
           <div class="matrix-grid">
-            @for (row of currentDirectStep()[0]; track $index) {
+            @for (row of asLUStep(currentStep()).L; track $index) {
             <div class="matrix-row-display">
               @for (val of row; track $index) {
-              <div class="matrix-cell">{{ val | number:'1.2-2' }}</div>
+              <div class="matrix-cell">{{ val }}</div>
               }
             </div>
             }
           </div>
         </div>
 
-        <!-- Vector B (Augmented part) -->
+        <div class="divider-vertical"></div>
+
+        <!-- Matrix U -->
+        <div class="matrix-group">
+          <div class="group-label">Matrix U</div>
+          <div class="matrix-grid">
+            @for (row of asLUStep(currentStep()).U; track $index) {
+            <div class="matrix-row-display">
+              @for (val of row; track $index) {
+              <div class="matrix-cell">{{ val }}</div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- CASE 3: ITERATIVE METHODS -->
+      @else if (isIterative) {
+      <div class="iterative-layout">
+        <div class="vector-group">
+          <div class="group-label">Iteration Solution (x<sup>{{currentIndex()}}</sup>)</div>
+          <div class="vector-display solution-style">
+            @for (val of asIterativeStep(currentStep())[0]; track $index) {
+            <div class="vector-cell">{{ val }}</div>
+            }
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="vector-group">
+          <div class="group-label error-label">Relative Errors</div>
+          <div class="vector-display error-style">
+            @for (val of asIterativeStep(currentStep())[1]; track $index) {
+            <div class="vector-cell">{{ val }}%</div>
+            }
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- CASE 4: DIRECT METHODS (Matrix | Vector) -->
+      @else {
+      <div class="direct-layout">
+        <div class="matrix-group">
+          <div class="group-label">Matrix State</div>
+          <div class="matrix-grid">
+            @for (row of asDirectStep(currentStep())[0]; track $index) {
+            <div class="matrix-row-display">
+              @for (val of row; track $index) {
+              <div class="matrix-cell">{{ val }}</div>
+              }
+            </div>
+            }
+          </div>
+        </div>
         <div class="vector-group b-vector">
           <div class="group-label">Vector B</div>
           <div class="vector-column">
-            @for (val of currentDirectStep()[1]; track $index) {
-            <div class="vector-cell">{{ val | number:'1.2-2' }}</div>
+            @for (val of asDirectStep(currentStep())[1]; track $index) {
+            <div class="vector-cell">{{ val }}</div>
             }
           </div>
         </div>
@@ -77,10 +136,10 @@
     </button>
 
     <div class="progress-bar">
-      <div class="progress-fill" [style.width.%]="((currentIndex() + 1) / steps.length) * 100"></div>
+      <div class="progress-fill" [style.width.%]="((currentIndex() + 1) / allSteps().length) * 100"></div>
     </div>
 
-    <button class="nav-btn next" [disabled]="currentIndex() === steps.length - 1" (click)="nextStep()">
+    <button class="nav-btn next" [disabled]="currentIndex() === allSteps().length - 1" (click)="nextStep()">
       Next
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>

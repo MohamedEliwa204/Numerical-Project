@@ -13,6 +13,9 @@ class LineraSolver(ABC):
         self.n = len(b)
         self.precision = precision
         self.steps = []
+        self.describitive_steps = []
+        self.Xs_steps = []
+        self.Ys_steps = []
 
     @abstractmethod
     def solve(self):
@@ -90,6 +93,9 @@ class DirectSolver(LineraSolver):
                 factor = A[i][k] / A[k][k]
                 A[i, k:] = np.round(A[i, k:] - factor * A[k, k:], decimals=self.precision)
                 b[i] = np.round(b[i] - (factor * b[k]), decimals=self.precision)
+                self.describitive_steps.append(
+                    f"R{i + 1} ← R{i + 1} - ({factor}) * R{k + 1}"
+                )
                 self.steps.append((A.copy(), b.copy()))
         
         if self.isSingular(A[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
@@ -102,24 +108,33 @@ class DirectSolver(LineraSolver):
             pivot = A[k][k]
             A[k] = A[k] / pivot
             b[k] = b[k] / pivot
-            if (k == 0):
-                self.steps.append((A.copy(), b.copy()))
+            self.steps.append((A.copy(), b.copy()))
+            self.describitive_steps.append(
+                f"R{k} ← R{k} / {pivot}"
+            )
             for i in range(0, k):
                 factor = A[i][k]
                 A[i] = A[i] - factor * A[k]
                 b[i] = b[i] - factor * b[k]
+                self.describitive_steps.append(
+                    f"R{i + 1} ← R{i + 1} - ({factor}) * R{k + 1}"
+                )
                 self.steps.append((A.copy(), b.copy()))
 
     def forward_substitution(self, L, b):
         n = L.shape[0]
         x = np.zeros(n)
         x[0] = b[0] / L[0][0]
+        self.Ys_steps.append(f"Y1 = ({np.round(b[0], decimals=self.precision)}) / {np.round(L[0][0], decimals=self.precision)} = {np.round(x[0], decimals=self.precision)}")
         for i in range(1, n):  # row traverse forward
             sum = 0
+            temp_terms = [f"{np.round(b[i], decimals=self.precision)}"]
             for j in range(0, i):  # column traverse backward
+                temp_terms.append(f"(({np.round(x[j], decimals=self.precision)}) * ({np.round(L[i][j], decimals=self.precision)}))")
                 sum = sum + (x[j] * L[i][j])
 
             x[i] = (b[i] - sum) / L[i][i]
+            self.Ys_steps.append(f"Y{i + 1} = ({" - ".join(temp_terms)}) / {np.round(L[i][i], decimals=self.precision)} = {np.round(x[i], decimals=self.precision)}")
 
         return x
 
@@ -127,12 +142,16 @@ class DirectSolver(LineraSolver):
         n = A.shape[0]
         x = np.zeros(n)
         x[n - 1] = b[n - 1] / A[n - 1][n - 1]
+        self.Xs_steps.append(f"X{n} = ({np.round(b[n - 1], decimals=self.precision)}) / {np.round(A[n - 1][n - 1], decimals=self.precision)} = {np.round(x[n - 1], decimals=self.precision)}")
         for i in range(n - 2, -1, -1):  # row traverse backward
             sum = 0
+            temp_terms = [f"({np.round(b[i], decimals=self.precision)})"]
             for j in range(i + 1, n):  # column traverse forward
+                temp_terms.append(f"(({np.round(x[j], decimals=self.precision)}) * ({np.round(A[i][j], decimals=self.precision)}))")
                 sum = sum + (x[j] * A[i][j])
 
             x[i] = (b[i] - sum) / A[i][i]
+            self.Xs_steps.append(f"X{i + 1} = ({" - ".join(temp_terms)}) / {np.round(A[i][i], decimals=self.precision)} = {np.round(x[i], decimals=self.precision)}")
 
         return x
 
@@ -158,6 +177,7 @@ class IterativeSolver(LineraSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
         i = 0
         x_old = self.initial_guess.copy()
         x_new = self.initial_guess.copy()

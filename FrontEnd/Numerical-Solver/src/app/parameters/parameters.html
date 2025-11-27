@@ -8,18 +8,20 @@
             <label class="param-label">Initial Guess (X₀)</label>
             <div class="guess-grid">
                 @for (val of initialGuess(); track i; let i = $index) {
-                <div class="guess-item">
-                    <span class="guess-label">x{{i+1}}</span>
-                    <input type="number" [ngModel]="initialGuess()[i]" (ngModelChange)="updateGuess(i, $event)"
-                        class="param-input">
-                </div>
+                    <div class="guess-item">
+                        <span class="guess-label">x{{i+1}}</span>
+                        <input type="text" [ngModel]="initialGuess()[i]" (ngModelChange)="updateGuess(i, $event)"
+                            class="param-input">
+                    </div>
                 }
             </div>
         </div>
 
         <div class="input-block">
             <label class="param-label">Stopping Condition</label>
-            <select [ngModel]="stopCondition()" (ngModelChange)="stopCondition.set($event); num_of_ites_condition.emit((stopCondition() === 'Number of Iterations') ? true : false)" class="param-select">
+            <select [ngModel]="stopCondition()"
+                (ngModelChange)="stopCondition.set($event); num_of_ites_condition.emit((stopCondition() === 'Number of Iterations') ? true : false)"
+                class="param-select">
                 <option value="Number of Iterations">Number of Iterations</option>
                 <option value="Absolute Relative Error">Absolute Relative Error</option>
             </select>

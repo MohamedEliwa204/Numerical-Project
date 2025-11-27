@@ -7,6 +7,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  width: fit-content;
+  min-width: 100%;
 }
 
 .steps-header {
@@ -35,6 +37,26 @@
   border-radius: 999px;
 }
 
+.description-bar {
+  background: linear-gradient(to right, #eff6ff, #ffffff);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.info-icon {
+  font-size: 1.25rem;
+}
+
+.description-text {
+  color: #1e40af;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 .steps-body {
   padding: 2rem;
   background-color: #ffffff;
@@ -50,31 +72,96 @@
   justify-content: center;
 }
 
-/* Iterative Layout */
-.iterative-layout {
+/* Equation Layout */
+.equation-layout {
   display: flex;
-  gap: 3rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.eq-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.equations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.equation-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-family: 'Times New Roman', serif;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.var {
+  font-style: italic;
+  font-weight: bold;
+}
+
+.eq-symbol {
+  margin: 0 0.25rem;
+}
+
+.fraction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 0 0.5rem;
+}
+
+.numerator {
+  border-bottom: 2px solid #1e293b;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+}
+
+.denominator {
+  padding-top: 2px;
+}
+
+.result {
+  font-weight: bold;
+  color: #2563eb;
+}
+
+/* Layouts */
+.iterative-layout,
+.lu-layout,
+.direct-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+.divider,
+.divider-vertical {
+  background-color: #e2e8f0;
 }
 
 .divider {
   width: 1px;
-  background-color: #e2e8f0;
-  align-self: stretch;
   min-height: 100px;
 }
 
-/* Direct Layout */
-.direct-layout {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  background: #f8fafc;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
+.divider-vertical {
+  width: 2px;
+  min-height: 120px;
+  background-color: #cbd5e1;
 }
 
 /* Common Groups */
@@ -114,16 +201,20 @@
 }
 
 .matrix-cell {
-  width: 4rem;
+  width: 5rem;
   height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: monospace;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   background-color: #f1f5f9;
   border-radius: 0.25rem;
   color: #1e293b;
+  padding: 0 0.25rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .vector-column {

@@ -6,6 +6,9 @@ class GaussElimination(DirectSolver):
         A_bar = self.A.copy()
         b_bar = self.b.copy()
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
 
         self.forward_elimination(A_bar, b_bar)
         solution = self.backward_substitution(A_bar, b_bar)
@@ -16,6 +19,9 @@ class GaussJordan(DirectSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
@@ -30,6 +36,9 @@ class DoolittleLUDecomposition(DirectSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
@@ -69,6 +78,7 @@ class DoolittleLUDecomposition(DirectSolver):
                 factor = A_bar[i][k] / A_bar[k][k]
                 L[i][k] = factor  # to store factors
                 A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                self.steps.append((L.copy(), A_bar.copy()))
                 
         if self.isSingular(A_bar[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
@@ -85,6 +95,9 @@ class CroutLUDecomposition(DirectSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
         A_bar = self.A.copy().T  # use the transpose and apply same Doolittle logic
         b_bar = self.b.copy()
 
@@ -111,6 +124,7 @@ class CroutLUDecomposition(DirectSolver):
                 factor = A_bar[i][k] / A_bar[k][k]
                 L[i][k] = factor  # to store factors
                 A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                self.steps.append((A_bar.copy().T, L.copy().T))
                 
         if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
@@ -136,20 +150,28 @@ class CholeskyLUDecomposition(DirectSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
         n = A_bar.shape[0]
         
         if not np.array_equal(A_bar, A_bar.T):  # Check for symmetry
             raise ValueError("Matrix is not symmetric")
-        
+        U = np.zeros((n, n))
+        L = np.zeros((n, n))
         for k in range(0, n):
             for i in range(0, k): # calculate the elements below the diagonal
                 A_bar[k][i] = np.round((A_bar[k][i] - np.sum(A_bar[i, :i]*A_bar[k, :i])) / A_bar[i][i], decimals=self.precision)
                 A_bar[i][k] = A_bar[k][i]
+                U[k][i], L[i][k] = A_bar[k][i], A_bar[i][k]
+                self.steps.append((L.copy(), U.copy()))
                 
             # Compute diagonal elements
             A_bar[k][k] = np.round(np.sqrt(A_bar[k][k] - np.sum(A_bar[k, :k]**2)), decimals=self.precision)
+            U[k][k], L[k][k] = A_bar[k][k], A_bar[k][k]
+            self.steps.append((L.copy(), U.copy()))
             
             if np.isclose(A_bar[k][k], 0):  # Check for singularity
                 raise ValueError("Matrix is singular or near-singular")

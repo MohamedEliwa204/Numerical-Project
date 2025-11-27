@@ -80,9 +80,10 @@
           </div>
         </div>
 
-        <!-- Steps Panel (Only visible if we have steps) -->
+        <!-- Steps Panel -->
         @if (simulationSteps().length > 0) {
-        <steps-panel [steps]="simulationSteps()" [isIterative]="isIterativeMethod()">
+        <steps-panel [steps]="simulationSteps()" [descriptions]="stepDescriptions()" [xsEquations]="xsEquations()"
+          [ysEquations]="ysEquations()" [isIterative]="isIterativeMethod()">
         </steps-panel>
         }
         }
@@ -90,7 +91,7 @@
 
       <!-- Right: Parameters -->
       <div class="right-panel">
-        <app-parameters [method]="selectedMethod()" [size]="numEquations()" (solve)="onSolve($event)" (num_of_ites_condition)="num_of_ites_condition.set($event)">
+        <app-parameters [method]="selectedMethod()" [size]="numEquations()" (solve)="onSolve($event)">
         </app-parameters>
       </div>
 

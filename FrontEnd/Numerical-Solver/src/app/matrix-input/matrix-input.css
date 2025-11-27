@@ -154,7 +154,8 @@
 }
 
 .matrix-input {
-    width: 5rem;
+    width: 6rem;
+    /* Increased width for symbolic input */
     height: 3rem;
     text-align: center;
     border: 1px solid #cbd5e1;
@@ -168,6 +169,11 @@
 .matrix-input:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.matrix-input.invalid {
+    border-color: #ef4444;
+    background-color: #fef2f2;
 }
 
 .equals-column {
@@ -192,7 +198,8 @@
 }
 
 .vector-input {
-    width: 5rem;
+    width: 6rem;
+    /* Increased width */
     height: 100%;
     text-align: center;
     border: 1px solid #bfdbfe;
@@ -208,4 +215,9 @@
 .vector-input:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.vector-input.invalid {
+    border-color: #ef4444;
+    background-color: #fef2f2;
 }
