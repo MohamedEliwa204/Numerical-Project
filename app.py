@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from sympy import factor
-# Import the factories
+
 from SolverFactory import NumericalSolverFactory, SymbolicSolverFactory, AbstractSolverFactory
 from mainSymbols import *
 from BackEnd.methods import *
