@@ -13,7 +13,7 @@ def solve_system():
         try:
             # print(request)
             data = request.get_json()
-            # print(data)
+            print(data)
         except:
             return jsonify({'error': 'The input is not valid JSON'}), 400
         
