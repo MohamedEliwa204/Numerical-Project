@@ -114,23 +114,111 @@ class SymGaussJordan(SymDirectSolver):
         return solution
 
 
-class SymIterativeSolver(SymLinearSolver):
-    @abstractmethod
-    def iterate(self):
-        pass
-
+class SymDoolittleLUDecomposition(SymDirectSolver):
     @override
     def solve(self):
-        pass
+        A_bar = self.A.copy()
+        b_bar = self.b.copy()
+        n = self.n
+        L = sp.zeros(n, n)
+
+        # Perform LU factorization
+        for k in range(n - 1):
+            if A_bar[k, k] == 0:
+                continue
+
+            for i in range(k + 1, n):
+                factor = A_bar[i, k] / A_bar[k, k]
+                L[i, k] = factor
+                A_bar[i, k:] = A_bar[i, k:] - factor * A_bar[k, k:]
+                self.steps.append(A_bar.copy())
 
 
-class SymGaussSeidel(SymIterativeSolver):
+        for i in range(n):
+            L[i, i] = 1
+
+        U = A_bar
+        self.steps.append(L)
+        self.steps.append(U)
+
+        y = self.forward_substitution(L, b_bar)
+        solution = self.backward_substitution(U, y)
+
+        return solution
+
+
+class SymCroutLUDecomposition(SymDirectSolver):
     @override
-    def iterate(self):
-        pass
+    def solve(self):
+        A_bar = self.A.copy().T  # Transpose for Crout method
+        b_bar = self.b.copy()
+        n = self.n
+        L = sp.zeros(n, n)
+
+        # Perform LU factorization on transposed matrix
+        for k in range(n - 1):
+            if A_bar[k, k] == 0:
+                continue
+
+            for i in range(k + 1, n):
+                factor = A_bar[i, k] / A_bar[k, k]
+                L[i, k] = factor
+                A_bar[i, k:] = A_bar[i, k:] - factor * A_bar[k, k:]
+                self.steps.append(A_bar.copy())
 
 
-class SymJacobiIteration(SymIterativeSolver):
+        for i in range(n):
+            L[i, i] = 1
+
+        # For Crout: transpose back to get proper L and U
+        L_Crout = A_bar.T
+        U_Crout = L.T
+
+        self.steps.append(L_Crout)
+        self.steps.append(U_Crout)
+
+        y = self.forward_substitution(L_Crout, b_bar)
+
+        solution = self.backward_substitution(U_Crout, y)
+
+        return solution
+
+
+class SymCholeskyLUDecomposition(SymDirectSolver):
     @override
-    def iterate(self):
-        pass
+    def solve(self):
+        A_bar = self.A.copy()
+        b_bar = self.b.copy()
+        n = self.n
+
+        # Check if matrix is symmetric
+        if A_bar != A_bar.T:
+            raise ValueError("Matrix is not symmetric - Cholesky decomposition requires a symmetric matrix")
+
+        # Compute Cholesky decomposition: A = L * L^T
+        for k in range(n):
+            # Calculate elements below the diagonal
+            for i in range(k):
+                sum_term = sum(A_bar[i, j] * A_bar[k, j] for j in range(i))
+                A_bar[k, i] = (A_bar[k, i] - sum_term) / A_bar[i, i]
+                A_bar[i, k] = A_bar[k, i]
+
+            # Compute diagonal element
+            sum_sq = sum(A_bar[k, j]**2 for j in range(k))
+            A_bar[k, k] = sp.sqrt(A_bar[k, k] - sum_sq)
+            self.steps.append(A_bar.copy())
+
+        # Extract lower triangular part
+        L = sp.zeros(n, n)
+        for i in range(n):
+            for j in range(i + 1):
+                L[i, j] = A_bar[i, j]
+
+        self.steps.append(L)
+
+        y = self.forward_substitution(L, b_bar)
+        solution = self.backward_substitution(L.T, y)
+
+        return solution
+
+
