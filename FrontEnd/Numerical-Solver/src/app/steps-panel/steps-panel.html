@@ -1,62 +1,179 @@
-@if (solved) {
-
-  <div class="iteration-panel">
-
-    <div class="iteration-header">
-      <h2>Iteration Steps</h2>
-
-      <div class="iteration-controls">
-        <button (click)="prevStep()" [disabled]="currentIndex === 0">Previous</button>
-        <span class="step-counter">Step {{ currentIndex + 1 }} / {{ iterations.length }}</span>
-        <button (click)="nextStep()" [disabled]="currentIndex === iterations.length - 1">Next</button>
-      </div>
+<div class="steps-container">
+  <div class="steps-header">
+    <h3 class="steps-title">Simulation Steps</h3>
+    <div class="steps-counter">
+      Step {{ currentIndex() + 1 }} of {{ allSteps().length }}
     </div>
-
-    @if (iterations.length > 0) {
-      <div class="iteration-body">
-
-        <div class="matrix-display">
-
-          <!-- Matrix A -->
-          <div class="matrix-block">
-            <div class="matrix-title">Matrix A</div>
-
-            <div class="matrix">
-              @for (row of iterations[currentIndex].A; track i; let i = $index) {
-                <div class="matrix-row">
-                  @for (val of row; track j; let j = $index) {
-                    <div class="matrix-cell">{{ val }}</div>
-                  }
-                </div>
-              }
-            </div>
-          </div>
-
-          <div class="augmented-symbol">|</div>
-
-          <!-- Vector B -->
-          <div class="matrix-block">
-            <div class="matrix-title">Vector B</div>
-
-            <div class="matrix">
-              @for (val of iterations[currentIndex].B; track k; let k = $index) {
-                <div class="matrix-row">
-                  <div class="matrix-cell">{{ val }}</div>
-                </div>
-              }
-            </div>
-          </div>
-
-        </div>
-      </div>
-    }
-
-    @if (iterations.length === 0) {
-      <div class="no-data">
-        No iteration results loaded yet.
-      </div>
-    }
-
   </div>
 
-}
+  <!-- Descriptive Step Text -->
+  @if (descriptions[currentIndex()]) {
+  <div class="description-bar">
+    <div class="info-icon">ℹ️</div>
+    <div class="description-text">
+      @for (part of parseMathParts(descriptions[currentIndex()]); track $index) {
+      @if (part.isVar) { <span>{{part.base}}<sub>{{part.sub}}</sub></span> }
+      @else { <span>{{part.text}}</span> }
+      }
+    </div>
+  </div>
+  }
+
+  <div class="steps-body">
+    <div class="step-content">
+
+      <!-- CASE 1: EQUATION STEPS (Substitution) -->
+      @if (isEquationStep(currentStep())) {
+      <div class="equation-layout">
+        <h4 class="eq-title">{{ asEquationStep(currentStep()).title }}</h4>
+        <div class="equations-list">
+          @for (eq of asEquationStep(currentStep()).equations; track $index) {
+          <div class="equation-row">
+            @if (parseEquation(eq); as parsed) {
+            <!-- Use parseMathParts to render LHS variable with subscripts -->
+            <span class="var">
+              @for (part of parseMathParts(parsed.variable); track $index) {
+              @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+              @else { {{part.text}} }
+              }
+            </span>
+            <span class="eq-symbol">=</span>
+            <div class="fraction">
+              <span class="numerator">
+                <!-- Use parseMathParts to render numerator with subscripts -->
+                @for (part of parseMathParts(parsed.numerator); track $index) {
+                @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+                @else { {{part.text}} }
+                }
+              </span>
+              <span class="denominator">
+                <!-- Use parseMathParts to render denominator with subscripts -->
+                @for (part of parseMathParts(parsed.denominator); track $index) {
+                @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+                @else { {{part.text}} }
+                }
+              </span>
+            </div>
+            <span class="eq-symbol">=</span>
+            <span class="result">
+              <!-- Use parseMathParts to render result with subscripts -->
+              @for (part of parseMathParts(parsed.result); track $index) {
+              @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+              @else { {{part.text}} }
+              }
+            </span>
+            } @else {
+            <span class="raw-eq">{{ eq }}</span>
+            }
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- CASE 2: LU DECOMPOSITION (Side by Side) -->
+      @else if (isLUStep(currentStep())) {
+      <div class="lu-layout">
+        <!-- Matrix L -->
+        <div class="matrix-group">
+          <div class="group-label">Matrix L</div>
+          <div class="matrix-grid">
+            @for (row of asLUStep(currentStep()).L; track $index) {
+            <div class="matrix-row-display">
+              @for (val of row; track $index) {
+              <div class="matrix-cell">{{ val }}</div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+
+        <div class="divider-vertical"></div>
+
+        <!-- Matrix U -->
+        <div class="matrix-group">
+          <div class="group-label">Matrix U</div>
+          <div class="matrix-grid">
+            @for (row of asLUStep(currentStep()).U; track $index) {
+            <div class="matrix-row-display">
+              @for (val of row; track $index) {
+              <div class="matrix-cell">{{ val }}</div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- CASE 3: ITERATIVE METHODS -->
+      @else if (isIterative) {
+      <div class="iterative-layout">
+        <div class="vector-group">
+          <div class="group-label">Iteration Solution (x<sup>{{currentIndex() + 1}}</sup>)</div>
+          <div class="vector-display solution-style">
+            @for (val of asIterativeStep(currentStep())[0]; track $index) {
+            <div class="vector-cell">{{ val }}</div>
+            }
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="vector-group">
+          <div class="group-label error-label">Relative Errors</div>
+          <div class="vector-display error-style">
+            @for (val of asIterativeStep(currentStep())[1]; track $index) {
+            <div class="vector-cell">{{ val }}%</div>
+            }
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- CASE 4: DIRECT METHODS (Matrix | Vector) -->
+      @else {
+      <div class="direct-layout">
+        <div class="matrix-group">
+          <div class="group-label">Matrix State</div>
+          <div class="matrix-grid">
+            @for (row of asDirectStep(currentStep())[0]; track $index) {
+            <div class="matrix-row-display">
+              @for (val of row; track $index) {
+              <div class="matrix-cell">{{ val }}</div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+        <div class="vector-group b-vector">
+          <div class="group-label">Vector B</div>
+          <div class="vector-column">
+            @for (val of asDirectStep(currentStep())[1]; track $index) {
+            <div class="vector-cell">{{ val }}</div>
+            }
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+
+  <div class="steps-controls">
+    <button class="nav-btn prev" [disabled]="currentIndex() === 0" (click)="prevStep()">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Previous
+    </button>
+
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="((currentIndex() + 1) / allSteps().length) * 100"></div>
+    </div>
+
+    <button class="nav-btn next" [disabled]="currentIndex() === allSteps().length - 1" (click)="nextStep()">
+      Next
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+    </button>
+  </div>
+</div>

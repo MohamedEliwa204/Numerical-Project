@@ -10,7 +10,8 @@
                 @for (val of initialGuess(); track i; let i = $index) {
                 <div class="guess-item">
                     <span class="guess-label">x{{i+1}}</span>
-                    <input type="number" [ngModel]="initialGuess()[i]" (ngModelChange)="updateGuess(i, $event)"
+                    <!-- Changed type to text for symbolic input -->
+                    <input type="text" [ngModel]="initialGuess()[i]" (ngModelChange)="updateGuess(i, $event)"
                         class="param-input">
                 </div>
                 }
@@ -18,28 +19,16 @@
         </div>
 
         <div class="input-block">
-            <label class="param-label">Stopping Condition</label>
-            <select [ngModel]="stopCondition()" (ngModelChange)="stopCondition.set($event)" class="param-select">
-                <option value="Number of Iterations">Number of Iterations</option>
-                <option value="Absolute Relative Error">Absolute Relative Error</option>
-            </select>
-        </div>
-
-        @if (stopCondition() === 'Number of Iterations') {
-        <div class="input-block">
-            <label class="param-label">Max Iterations</label>
+            <label class="param-label">Number of Iterations</label>
             <input type="number" [ngModel]="maxIterations()" (ngModelChange)="maxIterations.set($event)"
                 class="param-input-full">
         </div>
-        }
 
-        @if (stopCondition() === 'Absolute Relative Error') {
         <div class="input-block">
-            <label class="param-label">Epsilon (e.g., 0.0001)</label>
+            <label class="param-label">Epsilon (Absolute Relative Error)</label>
             <input type="number" [ngModel]="tolerance()" (ngModelChange)="tolerance.set($event)" step="0.00001"
                 class="param-input-full">
         </div>
-        }
     </div>
     }
 
@@ -69,7 +58,7 @@
     }
 
     <!-- Scaling Checkbox: Show for non-iterative methods -->
-    @if (!isIterative) {
+    @if (!isIterative && !(luForm() === 'Crout' || luForm() === 'Cholesky')) {
     <div class="params-group animate-fade">
         <label class="checkbox-container">
             <input type="checkbox" [ngModel]="useScaling()" (ngModelChange)="useScaling.set($event)">

@@ -13,12 +13,14 @@ export class Parameters {
   @Input({ required: true }) size!: number;
   @Output() solve = new EventEmitter<SolverParams>();
 
-  initialGuess = signal<number[]>([]);
+  @Output() num_of_ites_condition = new EventEmitter<boolean>();
+
+  initialGuess = signal<string[]>([]);
   tolerance = signal(0.0001);
   maxIterations = signal(50);
   luForm = signal<LUForm>('Doolittle');
   stopCondition = signal<StopCondition>('Number of Iterations');
-  useScaling = signal(false); // New signal for scaling option
+  useScaling = signal(false);
 
   get isIterative(): boolean {
     return this.method === 'Gauss-Seidel' || this.method === 'Jacobi-Iteration';
@@ -28,12 +30,17 @@ export class Parameters {
     if (changes['size']) {
       this.initialGuess.update(prev => {
         if (prev.length === this.size) return prev;
-        return new Array(this.size).fill(0);
+        return new Array(this.size).fill("0");
       });
     }
+
+    if (this.stopCondition() === 'Number of Iterations')
+      this.num_of_ites_condition.emit(true)
+    else
+      this.num_of_ites_condition.emit(false)
   }
 
-  updateGuess(index: number, val: number) {
+  updateGuess(index: number, val: string) {
     this.initialGuess.update(arr => {
       const newArr = [...arr];
       newArr[index] = val;

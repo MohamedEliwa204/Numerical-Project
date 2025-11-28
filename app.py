@@ -10,14 +10,12 @@ import time
 app = Flask(__name__)
 CORS(app)
 
-
 @app.route('/solve', methods=['POST'])
 def solve_system():
     if request.method == 'POST':
         try:
-            # print(request)
             data = request.get_json()
-            # print(data)
+            print(data)
         except:
             return jsonify({'error': 'The input is not valid JSON'}), 400
 
@@ -73,10 +71,10 @@ def solve_system():
 
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
-
+        
         endTime = time.time()
         executionTime = endTime - startTime
-
+        
         """
         result = {
             'solution': solution.tolist(),
@@ -87,13 +85,23 @@ def solve_system():
             result['num_of_ites'] = solver.num_of_ites
         """
 
+        raw_steps = getattr(solver, 'steps', [])
+
+        formatted_steps = []
+        if raw_steps:
+            for step in raw_steps:
+                converted_tuple = [x.tolist() if hasattr(x, 'tolist') else x for x in step]
+                formatted_steps.append(converted_tuple)
+        
         return jsonify({
             'solution': solution.tolist(),
             'executionTime': executionTime,
             'num_of_ites': getattr(solver, 'num_of_ites', None),
-            'steps': getattr(solver, 'steps', None)
+            'steps': formatted_steps,
+            'steps_descriptions' : getattr(solver, 'describitive_steps', None),
+            'Xs_steps' : getattr(solver, 'Xs_steps', None),
+            'Ys_steps' : getattr(solver, 'Ys_steps', None)
         })
 
-
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000) 

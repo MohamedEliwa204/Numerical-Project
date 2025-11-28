@@ -10,11 +10,11 @@ import { FormsModule } from '@angular/forms';
 export class MatrixInput {
   @Input() size: number = 3;
   @Output() sizeChange = new EventEmitter<number>();
-  @Output() matrixChange = new EventEmitter<{ A: number[][], B: number[], precision: number }>();
+  @Output() matrixChange = new EventEmitter<{ A: string[][], B: string[], precision: number }>();
 
   precision = signal(4);
-  matrix = signal<number[][]>([]);
-  rhs = signal<number[]>([]);
+  matrix = signal<string[][]>([]);
+  rhs = signal<string[]>([]);
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['size']) {
@@ -29,10 +29,10 @@ export class MatrixInput {
     const currentMatrix = this.matrix();
     const currentRhs = this.rhs();
 
-    const newMatrix: number[][] = Array(n).fill(0).map((_, i) =>
-      Array(n).fill(0).map((_, j) => (currentMatrix[i] && currentMatrix[i][j]) || 0)
+    const newMatrix: string[][] = Array(n).fill(0).map((_, i) =>
+      Array(n).fill(0).map((_, j) => (currentMatrix[i] && currentMatrix[i][j]) || "0")
     );
-    const newRhs: number[] = Array(n).fill(0).map((_, i) => currentRhs[i] || 0);
+    const newRhs: string[] = Array(n).fill(0).map((_, i) => currentRhs[i] || "0");
 
     this.matrix.set(newMatrix);
     this.rhs.set(newRhs);
@@ -48,7 +48,7 @@ export class MatrixInput {
     this.emitChanges();
   }
 
-  updateMatrixCell(i: number, j: number, val: number) {
+  updateMatrixCell(i: number, j: number, val: string) {
     this.matrix.update(m => {
       const row = [...m[i]];
       row[j] = val;
@@ -59,7 +59,7 @@ export class MatrixInput {
     this.emitChanges();
   }
 
-  updateRhsCell(i: number, val: number) {
+  updateRhsCell(i: number, val: string) {
     this.rhs.update(v => {
       const newV = [...v];
       newV[i] = val;
@@ -74,5 +74,12 @@ export class MatrixInput {
       B: this.rhs(),
       precision: this.precision()
     });
+  }
+
+  isValid(expr: string): boolean { 
+    if (!expr || expr.trim() === '') return false; 
+    const validChars = /^[a-zA-Z0-9\s+\-*/^()._]+$/; 
+    const endsWithOperator = /[+\-*/^]$/; 
+    return validChars.test(expr) && !endsWithOperator.test(expr.trim()); 
   }
 }

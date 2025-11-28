@@ -13,6 +13,9 @@ class LineraSolver(ABC):
         self.n = len(b)
         self.precision = precision
         self.steps = []
+        self.describitive_steps = []
+        self.Xs_steps = []
+        self.Ys_steps = []
 
     def round_significant(self, value):
         x = np.array(value, dtype=float)
@@ -113,6 +116,9 @@ class DirectSolver(LineraSolver):
 
                 temp = self.round_significant(factor * b[k])
                 b[i] = self.round_significant(b[i] - temp)
+                self.describitive_steps.append(
+                    f"R{i + 1} ← R{i + 1} - ({np.round(factor, decimals=self.precision)}) * R{k + 1}"
+                )
 
                 self.steps.append((A.copy(), b.copy()))
         
@@ -126,6 +132,10 @@ class DirectSolver(LineraSolver):
             pivot = A[k][k]
             A[k] = self.round_significant(A[k] / pivot)
             b[k] = self.round_significant(b[k] / pivot)
+            self.steps.append((A.copy(), b.copy()))
+            self.describitive_steps.append(
+                f"R{k} ← R{k} / {pivot}"
+            )
             for i in range(0, k):
                 factor = A[i][k]
                 
@@ -134,19 +144,25 @@ class DirectSolver(LineraSolver):
 
                 temp = self.round_significant(factor * b[k])
                 b[i] = self.round_significant(b[i] - temp)
-
+                self.describitive_steps.append(
+                    f"R{i + 1} ← R{i + 1} - ({np.round(factor, decimals=self.precision)}) * R{k + 1}"
+                )
                 self.steps.append((A.copy(), b.copy()))
 
     def forward_substitution(self, L, b):
         n = L.shape[0]
         x = np.zeros(n)
         x[0] = self.round_significant(b[0] / L[0][0])
+        self.Ys_steps.append(f"Y1 = ({np.round(b[0], decimals=self.precision)}) / {np.round(L[0][0], decimals=self.precision)} = {np.round(x[0], decimals=self.precision)}")
         for i in range(1, n):  # row traverse forward
             sum = 0
+            temp_terms = [f"{np.round(b[i], decimals=self.precision)}"]
             for j in range(0, i):  # column traverse backward
+                temp_terms.append(f"(({np.round(x[j], decimals=self.precision)}) * ({np.round(L[i][j], decimals=self.precision)}))")
                 sum = self.round_significant(sum + self.round_significant(x[j] * L[i][j]))
 
             x[i] = self.round_significant(self.round_significant(b[i] - sum) / L[i][i])
+            self.Ys_steps.append(f"Y{i + 1} = ({" - ".join(temp_terms)}) / {np.round(L[i][i], decimals=self.precision)} = {np.round(x[i], decimals=self.precision)}")
 
         return x
 
@@ -154,11 +170,15 @@ class DirectSolver(LineraSolver):
         n = A.shape[0]
         x = np.zeros(n)
         x[n - 1] = self.round_significant(b[n - 1] / A[n - 1][n - 1])
+        self.Xs_steps.append(f"X{n} = ({np.round(b[n - 1], decimals=self.precision)}) / {np.round(A[n - 1][n - 1], decimals=self.precision)} = {np.round(x[n - 1], decimals=self.precision)}")
         for i in range(n - 2, -1, -1):  # row traverse backward
             sum = 0
+            temp_terms = [f"({np.round(b[i], decimals=self.precision)})"]
             for j in range(i + 1, n):  # column traverse forward
+                temp_terms.append(f"(({np.round(x[j], decimals=self.precision)}) * ({np.round(A[i][j], decimals=self.precision)}))")
                 sum = self.round_significant(sum + self.round_significant(x[j] * A[i][j]))
 
+            self.Xs_steps.append(f"X{i + 1} = ({" - ".join(temp_terms)}) / {np.round(A[i][i], decimals=self.precision)} = {np.round(x[i], decimals=self.precision)}")
             x[i] = self.round_significant(self.round_significant(b[i] - sum) / A[i][i])
 
         return x
@@ -185,6 +205,7 @@ class IterativeSolver(LineraSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
         i = 0
         x_old = self.initial_guess.copy()
         x_new = self.initial_guess.copy()
@@ -206,7 +227,7 @@ class IterativeSolver(LineraSolver):
             while self.num_of_ites < 50:
                 x_new = self.iterate(self.A, self.b, x_old)
                 self.num_of_ites += 1
-                if self.calculate_error(x_old, x_new) < self.abs_rel_error:
+                if np.max(self.calculate_error(x_old, x_new) < self.abs_rel_error):
                     return x_new
                 x_old = x_new.copy()
                 
@@ -214,4 +235,7 @@ class IterativeSolver(LineraSolver):
                 raise ValueError("The method did not converge within 50 iterations")
 
     def calculate_error(self, x_old, x_new):
-        return np.max(np.abs(x_new - x_old) / np.maximum(np.abs(x_new), 1e-12)) * 100
+        return np.max(np.abs(x_new - x_old) / max(np.abs(x_new), 1e-12)) * 100
+    
+    def calculate_individual_error(self, x_old : float, x_new : float):
+        return (np.abs(x_new - x_old) / max(np.abs(x_new), 1e-12)) * 100

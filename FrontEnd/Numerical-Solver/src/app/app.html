@@ -18,8 +18,27 @@
           (matrixChange)="onMatrixDataChange($event)">
         </app-matrix-input>
 
-        <!-- Results Panel -->
-        @if (solution()) {
+        <!-- Results/Error Panel -->
+        @if (errorHappened()) {
+        <div class="error-panel animate-slide-up">
+          <div class="error-content">
+            <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div class="error-text">
+              <h3 class="error-title">Computation Error</h3>
+              <p class="error-message">{{ errorMessage() }}</p>
+            </div>
+          </div>
+          <button (click)="errorHappened.set(false)" class="close-error-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        } @else if (solution()) {
+        <!-- Solution Panel -->
         <div class="results-panel animate-slide-up">
           <div class="results-header">
             <div>
@@ -51,16 +70,22 @@
             </button>
           </div>
 
-          <!-- Solution Vector Display -->
           <div class="solution-grid">
             @for (x of solution(); track i; let i = $index) {
             <div class="solution-item">
-              <div class="solution-label">x{{i+1}}</div>
+              <div class="solution-label">x<sub>{{i+1}}</sub></div>
               <div class="solution-value">{{ x }}</div>
             </div>
             }
           </div>
         </div>
+
+        <!-- Steps Panel -->
+        @if (simulationSteps().length > 0) {
+        <steps-panel [steps]="simulationSteps()" [descriptions]="stepDescriptions()" [xsEquations]="xsEquations()"
+          [ysEquations]="ysEquations()" [isIterative]="isIterativeMethod()">
+        </steps-panel>
+        }
         }
       </div>
 
@@ -69,7 +94,6 @@
         <app-parameters [method]="selectedMethod()" [size]="numEquations()" (solve)="onSolve($event)">
         </app-parameters>
       </div>
-      <app-steps-panel></app-steps-panel>
 
     </div>
   </main>

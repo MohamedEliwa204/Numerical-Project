@@ -22,7 +22,7 @@ export class SolverService {
   ) {}
 
 
-  getSolution(data : any) : Observable<ResponseData> {
+  getSolution(data : RequestData) : Observable<ResponseData> {
     const url = this.apiUrl + "/solve"
     // const url = this.apiUrl
     return this.http.post<ResponseData>(url, data, this.httpOptions)
