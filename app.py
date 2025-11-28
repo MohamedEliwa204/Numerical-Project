@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
+from SolverFactory import NumericalSolverFactory, SymbolicSolverFactory, AbstractSolverFactory
+from mainSymbols import *
 from BackEnd.methods import *
 import numpy as np
 import time
@@ -11,41 +14,58 @@ CORS(app)
 def solve_system():
     if request.method == 'POST':
         try:
-            # print(request)
             data = request.get_json()
             print(data)
         except:
             return jsonify({'error': 'The input is not valid JSON'}), 400
-        
-        A = np.array(data['A'])
-        b = np.array(data['b'])
+
+        A = np.array(data['A']) if data['A'] else None
+        b = np.array(data['b']) if data['b'] else None
+        mode = data.get('mode')
         method = data.get('method')
         precision = data.get('precision', 5)
         initial_guess = data.get('initial_guess')
         num_of_ites = data.get('num_of_ites')
         abs_rel_error = data.get('abs_rel_error')
         withScaling = data.get('scaling', False)
-        
-        match method:
-            case 'GaussElimination':
-                solver = GaussElimination(A, b, precision, withScaling)
-            case 'GaussJordan':
-                solver = GaussJordan(A, b, precision, withScaling)
-            case 'DoolittleLUDecomposition':
-                solver = DoolittleLUDecomposition(A, b, precision, withScaling)
-            case 'CroutLUDecomposition':
-                solver = CroutLUDecomposition(A, b, precision)
-            case 'CholeskyLUDecomposition':
-                solver = CholeskyLUDecomposition(A, b, precision)
-            case 'GaussSeidel':
-                solver = GaussSeidel(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
-            case 'JacobiIteration':
-                solver = JacobiIteration(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
-            case None:
-                return jsonify({'error': 'Selection of method is required'}), 400
-            
+        n = data.get('n')
+        factory: AbstractSolverFactory = None
+        solver = None
+        if mode == "numerical":
+            factory = NumericalSolverFactory()
+            solver = factory.create_solver(
+                method,
+                A,
+                b,
+                precision=precision,
+                withScaling=withScaling,
+                initial_guess=initial_guess,
+                num_of_ites=num_of_ites,
+                abs_rel_error=abs_rel_error
+            )
+        if mode == "symbolic":
+            factory = SymbolicSolverFactory()
+            solver = factory.create_solver(method, n)
+        # match method:
+        #     case 'GaussElimination':
+        #         solver = GaussElimination(A, b, precision, withScaling)
+        #     case 'GaussJordan':
+        #         solver = GaussJordan(A, b, precision, withScaling)
+        #     case 'DoolittleLUDecomposition':
+        #         solver = DoolittleLUDecomposition(A, b, precision, withScaling)
+        #     case 'CroutLUDecomposition':
+        #         solver = CroutLUDecomposition(A, b, precision)
+        #     case 'CholeskyLUDecomposition':
+        #         solver = CholeskyLUDecomposition(A, b, precision)
+        #     case 'GaussSeidel':
+        #         solver = GaussSeidel(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
+        #     case 'JacobiIteration':
+        #         solver = JacobiIteration(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
+        #     case None:
+        #         return jsonify({'error': 'Selection of method is required'}), 400
+
         startTime = time.time()
-        
+
         try:
             solution = solver.solve()
 

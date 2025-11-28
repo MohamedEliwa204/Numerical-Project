@@ -8,7 +8,11 @@ class GaussSeidel(IterativeSolver):
         relative_error = []
 
         for k in range(0, self.n):
-            x_new[k] = (b[k] - (np.dot(A[k, :k], x_new[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
+            newSum = self.round_significant(np.dot(A[k, :k], x_new[:k]))
+            oldSum = self.round_significant(np.dot(A[k, k + 1:], x_old[k + 1:]))
+            sum = self.round_significant(newSum + oldSum)
+            numerator = self.round_significant(b[k] - sum)
+            x_new[k] = self.round_significant(numerator / A[k][k])
             relative_error.append(self.calculate_individual_error(x_old[k], x_new[k]))
         self.steps.append((x_new.copy(), relative_error.copy()))
         return x_new
@@ -22,7 +26,11 @@ class JacobiIteration(IterativeSolver):
         relative_error = []
 
         for k in range(0, self.n):
-            x_new[k] = (b[k] - (np.dot(A[k, :k], x_old[:k])) - np.dot(A[k, k + 1:], x_old[k + 1:])) / A[k][k]
+            oldSum1 = self.round_significant(np.dot(A[k, :k], x_old[:k]))
+            oldSum2 = self.round_significant(np.dot(A[k, k + 1:], x_old[k + 1:]))
+            sum = self.round_significant(oldSum1 + oldSum2)
+            numerator = self.round_significant(b[k] - sum)
+            x_new[k] = self.round_significant(numerator / A[k][k])
             relative_error.append(self.calculate_individual_error(x_old[k], x_new[k]))
         self.steps.append((x_new.copy(), relative_error.copy()))
 

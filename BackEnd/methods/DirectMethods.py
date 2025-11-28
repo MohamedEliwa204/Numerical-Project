@@ -77,9 +77,10 @@ class DoolittleLUDecomposition(DirectSolver):
                 raise ValueError("Matrix is singular or near-singular.")
             
             for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
-                factor = A_bar[i][k] / A_bar[k][k]
+                factor = self.round_significant(A_bar[i][k] / A_bar[k][k])
                 L[i][k] = factor  # to store factors
-                A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                tempRow = self.round_significant(factor * A_bar[k, k:])
+                A_bar[i, k:] = self.round_significant(A_bar[i, k:] - tempRow)
                 self.steps.append((L.copy(), A_bar.copy()))
                 
         if self.isSingular(A_bar[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
@@ -90,7 +91,7 @@ class DoolittleLUDecomposition(DirectSolver):
 
         y = self.forward_substitution(L, b_bar)  # result of the system Ly = b
         solution = self.backward_substitution(U, y)  # result of Ux = y
-        return np.round(solution, decimals=self.precision)
+        return solution
 
 
 class CroutLUDecomposition(DirectSolver):
@@ -124,9 +125,10 @@ class CroutLUDecomposition(DirectSolver):
             if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot is zero)
                 raise ValueError("Matrix is singular or near-singular.")
             for i in range(k + 1, n):  # row traverse (apply the elimination for specific row)
-                factor = A_bar[i][k] / A_bar[k][k]
+                factor = self.round_significant(A_bar[i][k] / A_bar[k][k])
                 L[i][k] = factor  # to store factors
-                A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                tempRow = self.round_significant(factor * A_bar[k, k:])
+                A_bar[i, k:] = self.round_significant(A_bar[i, k:] - tempRow)
                 # For steps: L.T becomes U_Crout, so we need 1s on L's diagonal for U to have 1s on diagonal
                 L_step = L.copy()
                 np.fill_diagonal(L_step, 1)
@@ -150,7 +152,7 @@ class CroutLUDecomposition(DirectSolver):
         for i in range(n):
             Ordered_solution[o[i]] = UnOrdered_solution[i]
 
-        return np.round(Ordered_solution, decimals=self.precision)
+        return Ordered_solution
 
    
 class CholeskyLUDecomposition(DirectSolver): 
@@ -170,13 +172,15 @@ class CholeskyLUDecomposition(DirectSolver):
         L = np.zeros((n, n))
         for k in range(0, n):
             for i in range(0, k): # calculate the elements below the diagonal
-                A_bar[k][i] = np.round((A_bar[k][i] - np.sum(A_bar[i, :i]*A_bar[k, :i])) / A_bar[i][i], decimals=self.precision)
+                sum = np.sum(self.round_significant(A_bar[k, :i] * A_bar[i, :i]))
+                A_bar[k][i] = self.round_significant(self.round_significant(A_bar[k][i] - sum) / A_bar[i][i])
                 A_bar[i][k] = A_bar[k][i]
                 U[k][i], L[i][k] = A_bar[k][i], A_bar[i][k]
                 self.steps.append((L.copy(), U.copy()))
                 
             # Compute diagonal elements
-            A_bar[k][k] = np.round(np.sqrt(A_bar[k][k] - np.sum(A_bar[k, :k]**2)), decimals=self.precision)
+            sum = np.sum(self.round_significant(A_bar[k, :k]**2))
+            A_bar[k][k] = self.round_significant(np.sqrt(self.round_significant(A_bar[k][k] - sum)))
             U[k][k], L[k][k] = A_bar[k][k], A_bar[k][k]
             self.steps.append((L.copy(), U.copy()))
             
@@ -187,4 +191,4 @@ class CholeskyLUDecomposition(DirectSolver):
             
         y = self.forward_substitution(np.tril(A_bar), b_bar)
         x = self.backward_substitution(np.triu(A_bar), y)
-        return np.round(x, decimals=self.precision)
+        return x
