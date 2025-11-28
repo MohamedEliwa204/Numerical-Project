@@ -20,8 +20,8 @@
 
         <div class="input-block">
             <label class="param-label">Number of Iterations</label>
-            <input type="number" [ngModel]="maxIterations()" (ngModelChange)="maxIterations.set($event)"
-                class="param-input-full">
+            <input type="number" [ngModel]="iterationsNum()" (ngModelChange)="onIterationsChange($event)"
+                class="param-input-full" [max]="maxIterations" [min]="minIterations">
         </div>
 
         <div class="input-block">
