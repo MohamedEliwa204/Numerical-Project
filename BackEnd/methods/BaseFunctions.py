@@ -16,11 +16,14 @@ class LineraSolver(ABC):
         self.describitive_steps = []
         self.Xs_steps = []
         self.Ys_steps = []
+        self.message = ""
 
     def round_significant(self, value):
         x = np.array(value, dtype=float)
 
         if np.isscalar(x):
+            if not np.isfinite(x):
+                return x
             if x == 0:
                 return 0
             else:
@@ -29,7 +32,9 @@ class LineraSolver(ABC):
         else:
             rounded_array = np.zeros_like(x)
             for index, val in np.ndenumerate(x):
-                if val == 0:
+                if not np.isfinite(val):
+                    rounded_array[index] = val
+                elif val == 0:
                     rounded_array[index] = 0
                 else:
                     digits = self.precision - int(np.floor(np.log10(abs(val)))) - 1
@@ -178,8 +183,8 @@ class DirectSolver(LineraSolver):
                 temp_terms.append(f"(({np.round(x[j], decimals=self.precision)}) * ({np.round(A[i][j], decimals=self.precision)}))")
                 sum = self.round_significant(sum + self.round_significant(x[j] * A[i][j]))
 
-            self.Xs_steps.append(f"X{i + 1} = ({" - ".join(temp_terms)}) / {np.round(A[i][i], decimals=self.precision)} = {np.round(x[i], decimals=self.precision)}")
             x[i] = self.round_significant(self.round_significant(b[i] - sum) / A[i][i])
+            self.Xs_steps.append(f"X{i + 1} = ({" - ".join(temp_terms)}) / {np.round(A[i][i], decimals=self.precision)} = {np.round(x[i], decimals=self.precision)}")
 
         return x
 
@@ -189,7 +194,8 @@ class IterativeSolver(LineraSolver):
     def __init__(self, A, b, precision=5, initial_guess=None, num_of_ites=None, abs_rel_error=None):
         super().__init__(A, b, precision)
 
-
+        self.isDiagDominant = True
+        self.DiagEleStrictlyGreater = False
         self.num_of_ites = num_of_ites
         self.abs_rel_error = abs_rel_error
 
@@ -206,36 +212,44 @@ class IterativeSolver(LineraSolver):
     def solve(self):
         self.steps.clear()
         self.describitive_steps.clear()
-        i = 0
         x_old = self.initial_guess.copy()
         x_new = self.initial_guess.copy()
+
+        # Check for zero diagonal elements
+        if np.any(np.isclose(np.diag(self.A), 0)):
+             raise ValueError("Matrix has zero diagonal elements. Iterative methods require non-zero diagonal elements.")
         
-        if self.abs_rel_error is None:
-            for i in range(self.num_of_ites):
-                x_new = self.iterate(self.A, self.b, x_old)
-                x_old = x_new.copy()
-            return x_new
+        # Diagonally Dominant test
+        for i in range(self.n):
+            sum_row = sum(abs(self.A[i, :self.n]))
+            if abs(self.A[i][i]) < sum_row - abs(self.A[i][i]):
+                self.isDiagDominant = False
+                break
+            if abs(self.A[i][i] > sum_row) - abs(self.A[i][i]):
+                self.DiagEleStrictlyGreater = True
+        if (self.DiagEleStrictlyGreater == False):
+            self.isDiagDominant = False
         
-        elif self.num_of_ites is None:
-            # Diagonally Dominant test
-            #for i in range(self.n):
-            #    sum_row = sum(abs(self.A[i, :self.n]))
-            #    if abs(self.A[i][i]) < sum_row - abs(self.A[i][i]):
-            #        raise ValueError("The matrix is not diagonally dominant (May not converge)")
-            
-            self.num_of_ites = 0
-            while self.num_of_ites < 50:
-                x_new = self.iterate(self.A, self.b, x_old)
-                self.num_of_ites += 1
-                if np.max(self.calculate_error(x_old, x_new) < self.abs_rel_error):
-                    return x_new
-                x_old = x_new.copy()
+        iterations_num = self.num_of_ites
+        self.num_of_ites = 0
+        
+        while self.num_of_ites < iterations_num:
+            x_new = self.iterate(self.A, self.b, x_old)
+            self.num_of_ites += 1
+            if self.calculate_error(x_old, x_new) < self.abs_rel_error:
+                return x_new
+            x_old = x_new.copy()
                 
-            if self.num_of_ites == 50:
-                raise ValueError("The method did not converge within 50 iterations")
+        if self.num_of_ites == iterations_num:
+            if (self.isDiagDominant == False):
+                self.message = f"The method could not reach the tolerance required within {iterations_num} iterations (Wouldn't probably converge) ❌"
+            else:
+                self.message = f"The method could not reach the tolerance required within {iterations_num} iterations although it would converge (Diagonally Dominant) ✅"
+            
+            return x_new
 
     def calculate_error(self, x_old, x_new):
-        return np.max(np.abs(x_new - x_old) / max(np.abs(x_new), 1e-12)) * 100
+        return np.max(np.abs(x_new - x_old) / np.maximum(np.abs(x_new), 1e-12)) * 100
     
     def calculate_individual_error(self, x_old : float, x_new : float):
         return (np.abs(x_new - x_old) / max(np.abs(x_new), 1e-12)) * 100

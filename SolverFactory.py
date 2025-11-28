@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from main import (
+from BackEnd.methods import (
     GaussElimination,
     GaussJordan,
     DoolittleLUDecomposition,

@@ -13,8 +13,12 @@ export class MatrixInput {
   @Output() matrixChange = new EventEmitter<{ A: string[][], B: string[], precision: number }>();
   @Output() modeChange = new EventEmitter<'numerical' | 'symbolic'>();
 
-  precision = signal(4);
+  precision = signal(5);
+  minPrecision = 1
+  maxPrecision = 15
   matrix = signal<string[][]>([]);
+  minSize = 2
+  maxSize = 50
   rhs = signal<string[]>([]);
 
   ngOnChanges(changes: SimpleChanges) {
@@ -52,11 +56,28 @@ export class MatrixInput {
   }
 
   onSizeChange(val: number) {
+    if (val > this.maxSize) {
+      this.size = this.maxSize
+    }
+    else if (val < this.minSize) {
+      this.size = this.minSize
+    }
+    else {
+      this.size = val
+    }
     this.sizeChange.emit(val);
   }
 
   onPrecisionChange(val: number) {
-    this.precision.set(val);
+    if (val > this.maxPrecision) {
+      this.precision.set(this.maxPrecision)
+    }
+    else if (val < this.minPrecision) {
+      this.precision.set(this.minPrecision)
+    }
+    else {
+      this.precision.set(val);
+    }
     this.emitChanges();
   }
 

@@ -33,16 +33,29 @@ def solve_system():
         solver = None
         if mode == "numerical":
             factory = NumericalSolverFactory()
-            solver = factory.create_solver(
-                method,
-                A,
-                b,
-                precision=precision,
-                withScaling=withScaling,
-                initial_guess=initial_guess,
-                num_of_ites=num_of_ites,
-                abs_rel_error=abs_rel_error
-            )
+            # Check if method is iterative to pass correct parameters
+            iterative_methods = ['gauss_seidel', 'jacobi']
+            if method in iterative_methods:
+                # Iterative methods: precision, initial_guess, num_of_ites, abs_rel_error
+                solver = factory.create_solver(
+                    method,
+                    A,
+                    b,
+                    precision=precision,
+                    initial_guess=initial_guess,
+                    num_of_ites=num_of_ites,
+                    abs_rel_error=abs_rel_error
+                )
+            else:
+                # Direct methods: precision and withScaling
+                solver = factory.create_solver(
+                    method,
+                    A,
+                    b,
+                    precision=precision,
+                    withScaling=withScaling
+                )
+
         if mode == "symbolic":
             factory = SymbolicSolverFactory()
             # For symbolic mode, use raw string arrays from frontend (not numpy arrays)
@@ -106,7 +119,8 @@ def solve_system():
             'steps': formatted_steps,
             'steps_descriptions': to_serializable(getattr(solver, 'describitive_steps', None)),
             'Xs_steps': to_serializable(getattr(solver, 'Xs_steps', None)),
-            'Ys_steps': to_serializable(getattr(solver, 'Ys_steps', None))
+            'Ys_steps': to_serializable(getattr(solver, 'Ys_steps', None)),
+            'message' : getattr(solver, 'message', "")
         })
         
         

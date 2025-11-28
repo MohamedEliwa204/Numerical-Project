@@ -31,12 +31,13 @@ export class App {
 
   errorHappened = signal<boolean>(false)
   errorMessage = signal<string>("")
+  message = signal<string>('');
 
   num_of_ites_condition = signal<boolean>(true)
   simulationSteps = signal<SimulationStep[]>([]);
   stepDescriptions = signal<string[]>([]);
-  xsEquations = signal<string[]>([]); // UPDATED
-  ysEquations = signal<string[]>([]); // UPDATED
+  xsEquations = signal<string[]>([]);
+  ysEquations = signal<string[]>([]);
 
   isIterativeMethod = computed(() => {
     const m = this.selectedMethod();
@@ -62,6 +63,7 @@ export class App {
     this.stepDescriptions.set([]);
     this.xsEquations.set([]);
     this.ysEquations.set([]);
+    this.message.set('');
 
     let methodUsed: string = 'GaussElimination'
     switch (this.selectedMethod()) {
@@ -107,8 +109,8 @@ export class App {
       precision: this.precision(),
       withScaling: params.useScaling,
       initial_guess: params.initialGuess,
-      num_of_ites: (this.num_of_ites_condition()) ? params.maxIterations : undefined,
-      abs_rel_error: (!this.num_of_ites_condition()) ? params.tolerance : undefined
+      num_of_ites: params.maxIterations,
+      abs_rel_error: params.tolerance
     }
 
     console.log("DATA TO BE SENT TO BACKEND:")
@@ -117,6 +119,12 @@ export class App {
     this.api.getSolution(dataSent).subscribe({
       next: (response: ResponseData) => {
         console.log('Response from Backend: ', response);
+
+        if (!response.solution) {
+          this.errorHappened.set(true);
+          this.errorMessage.set("No solution returned from backend.");
+          return;
+        }
 
         // Handle both numerical and symbolic solutions
         const result = response.solution.map((val) => {
@@ -165,6 +173,7 @@ export class App {
         this.stepDescriptions.set(response.steps_descriptions)
         this.xsEquations.set(response.Xs_steps);
         this.ysEquations.set(response.Ys_steps);
+        this.message.set(response.message)
 
         // const endTime = performance.now();
         this.executionTime.set(parseFloat(response.executionTime.toFixed(12)));
