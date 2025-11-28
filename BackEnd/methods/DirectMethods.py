@@ -120,7 +120,8 @@ class CroutLUDecomposition(DirectSolver):
                 # Swap the order tracker (to keep order of the right solutions)
                 o[[k, max_index]] = o[[max_index, k]]
                 # swap rows in L (factors)
-                L[[k, max_index]] = L[[max_index, k]]
+                if k > 0:
+                    L[[k, max_index], :k] = L[[max_index, k], :k]
 
             if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot is zero)
                 raise ValueError("Matrix is singular or near-singular.")
@@ -129,7 +130,8 @@ class CroutLUDecomposition(DirectSolver):
                 L[i][k] = factor  # to store factors
                 tempRow = self.round_significant(factor * A_bar[k, k:])
                 A_bar[i, k:] = self.round_significant(A_bar[i, k:] - tempRow)
-                # For steps: L.T becomes U_Crout, so we need 1s on L's diagonal for U to have 1s on diagonal
+                # For Crout: L_crout = A_bar.T (lower), U_crout = L.T (upper with 1s on diagonal)
+                # Ensure diagonal has 1s before creating step
                 L_step = L.copy()
                 np.fill_diagonal(L_step, 1)
                 self.steps.append((A_bar.copy().T, L_step.T))

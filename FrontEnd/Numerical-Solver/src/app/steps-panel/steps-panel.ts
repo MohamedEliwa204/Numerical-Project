@@ -1,6 +1,4 @@
 import { Component, computed, Input, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-
 @Component({
   selector: 'steps-panel',
   standalone: true,

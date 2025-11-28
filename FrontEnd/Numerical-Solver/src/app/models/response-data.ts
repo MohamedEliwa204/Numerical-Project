@@ -5,5 +5,6 @@ export interface ResponseData {
     steps : SimulationStep[],
     steps_descriptions : string[],
     Xs_steps : string[],
-    Ys_steps : string[]
+    Ys_steps : string[],
+    message : string
 }

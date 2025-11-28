@@ -15,8 +15,7 @@
       <!-- Center: Matrix Input -->
       <div class="center-panel">
         <app-matrix-input [size]="numEquations()" (sizeChange)="numEquations.set($event)"
-          (matrixChange)="onMatrixDataChange($event)"
-          (modeChange)="mode.set($event)">
+          (matrixChange)="onMatrixDataChange($event)" (modeChange)="mode.set($event)">
         </app-matrix-input>
 
         <!-- Results/Error Panel -->
@@ -79,6 +78,13 @@
             </div>
             }
           </div>
+
+          @if (message()) {
+          <div class="message-box">
+            <div class="message-icon">!</div>
+            <div class="message-text">{{ message() }}</div>
+          </div>
+          }
         </div>
 
         <!-- Steps Panel -->
