@@ -175,9 +175,9 @@ class CholeskyLUDecomposition(DirectSolver):
         for k in range(0, n):
             for i in range(0, k): # calculate the elements below the diagonal
                 sum = np.sum(self.round_significant(A_bar[k, :i] * A_bar[i, :i]))
-                A_bar[k][i] = self.round_significant(self.round_significant(A_bar[k][i] - sum) / A_bar[i][i])
-                A_bar[i][k] = A_bar[k][i]
-                U[k][i], L[i][k] = A_bar[k][i], A_bar[i][k]
+                A_bar[k][i] = self.round_significant(self.round_significant(A_bar[k][i] - sum) / A_bar[i][i]) # below
+                A_bar[i][k] = A_bar[k][i] # above
+                L[k][i], U[i][k] = A_bar[k][i], A_bar[i][k]
                 self.steps.append((L.copy(), U.copy()))
                 
             # Compute diagonal elements

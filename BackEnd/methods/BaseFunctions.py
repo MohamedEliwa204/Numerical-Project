@@ -64,9 +64,9 @@ class DirectSolver(LineraSolver):
         self.scalar = np.zeros(n)
         
         for i in range(n):
-            largest_coef = max(abs(A[i, :n])) # find the largest coefficient magnitude in row i
+            largest_coef = self.round_significant(max(abs(A[i, :n])))  # apply precision
             self.scalar[i] = largest_coef
-            if np.isclose(largest_coef, 0): # check for any zero row
+            if np.isclose(largest_coef, 0):  # check for any zero row
                 raise ValueError("Matrix is singular or near-singular")
     
     def partial_pivoting(self, A, b, k):
@@ -75,14 +75,17 @@ class DirectSolver(LineraSolver):
         
         if self.withScaling is False:
             # pivoting without scaling
+            max_val = self.round_significant(abs(A[k][k]))
             for i in range(k, n):
-                if abs(A[i][k]) > abs(A[max_index][k]):
+                current_val = self.round_significant(abs(A[i][k]))
+                if current_val > max_val:
+                    max_val = current_val
                     max_index = i
         else:
             # pivoting with scaling
-            big = abs(A[k][k]) / self.scalar[k]
-            for i in range(k+1, n):
-                dummy = abs(A[i][k]) / self.scalar[i]
+            big = self.round_significant(abs(A[k][k]) / self.scalar[k])
+            for i in range(k + 1, n):
+                dummy = self.round_significant(abs(A[i][k]) / self.scalar[i])
                 if dummy > big:
                     big = dummy
                     max_index = i
