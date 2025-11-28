@@ -240,6 +240,7 @@ class IterativeSolver(LineraSolver):
             x_new = self.iterate(self.A, self.b, x_old)
             self.num_of_ites += 1
             if self.calculate_error(x_old, x_new) < self.abs_rel_error:
+                self.message = f"successfully reached the tolerance required within {self.num_of_ites} iterations (Happy Convergence :D)✅"
                 return x_new
             x_old = x_new.copy()
                 
