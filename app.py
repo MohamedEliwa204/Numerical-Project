@@ -45,7 +45,13 @@ def solve_system():
             )
         if mode == "symbolic":
             factory = SymbolicSolverFactory()
-            solver = factory.create_solver(method, n)
+            # For symbolic mode, use raw string arrays from frontend (not numpy arrays)
+            A_symbolic = data['A']
+            b_symbolic = data['b']
+            print(f"Symbolic mode - A: {A_symbolic}")
+            print(f"Symbolic mode - b: {b_symbolic}")
+            print(f"Symbolic mode - n: {n}")
+            solver = factory.create_solver(method, n, A_symbolic, b_symbolic)
         # match method:
         #     case 'GaussElimination':
         #         solver = GaussElimination(A, b, precision, withScaling)

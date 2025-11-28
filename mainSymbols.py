@@ -4,9 +4,11 @@ from typing_extensions import override
 
 
 class SymLinearSolver(ABC):
-    def __init__(self, n):  # here n tthe number of roows in matrix instead of A
-        self.A = sp.Matrix(n, n, lambda i, j: sp.symbols(f"a{i + 1}{j + 1}"))
-        self.b = sp.Matrix(n, 1, lambda i, j: sp.symbols(f"b{i + 1}"))
+    def __init__(self, n, A, b):  # n: number of rows, A: 2D list of strings, b: 1D list of strings
+        # Parse each cell of A and b as a SymPy expression
+        # This allows actual values like "2", "3.5" or symbols like "a", "2*x + y"
+        self.A = sp.Matrix(n, n, lambda i, j: sp.sympify(A[i][j]))
+        self.b = sp.Matrix(n, 1, lambda i, j: sp.sympify(b[i]))
         self.steps = []
         self.describitive_steps = []
         self.Xs_steps = []
@@ -19,8 +21,8 @@ class SymLinearSolver(ABC):
 
 
 class SymDirectSolver(SymLinearSolver):
-    def __init__(self, n):
-        super().__init__(n)
+    def __init__(self, n, A, b):
+        super().__init__(n, A, b)
 
     def forward_elimination(self, A: sp.Matrix, b: sp.Matrix):
         aug = A.row_join(b)
@@ -69,14 +71,14 @@ class SymDirectSolver(SymLinearSolver):
         x = sp.Matrix(sp.symbols(f"x0:{n}"))
 
         x[0] = b[0] / L[0, 0]
-        self.Ys_steps.append(f"Y1 = {x[0]}")
+        self.Ys_steps.append(f"Y1 = {sp.simplify(x[0])}")
         for i in range(1, n):
             sum_ = 0
             for j in range(i):
                 sum_ += L[i, j] * x[j]
 
             x[i] = (b[i] - sum_) / L[i, i]
-            self.Ys_steps.append(f"Y{i + 1} = {x[i]}")
+            self.Ys_steps.append(f"Y{i + 1} = {sp.simplify(x[i])}")
 
         return x
 
@@ -84,7 +86,7 @@ class SymDirectSolver(SymLinearSolver):
         n = U.rows
         x = sp.Matrix(sp.symbols(f"x1:{n + 1}"))
         x[n - 1] = b[n - 1] / U[n - 1, n - 1]
-        self.Xs_steps.append(f"X{n} = ({x[n - 1]})")
+        self.Xs_steps.append(f"X{n} = ({sp.simplify(x[n - 1])})")
 
         for i in range(n - 2, -1, -1):  # traverse rows backward
             sum_ = 0
@@ -92,12 +94,15 @@ class SymDirectSolver(SymLinearSolver):
                 sum_ += U[i, j] * x[j]
 
             x[i] = (b[i] - sum_) / U[i, i]
-            self.Xs_steps.append(f"X{i + 1} = {x[i]}")
+            self.Xs_steps.append(f"X{i + 1} = {sp.simplify(x[i])}")
 
         return x
 
 
 class SymGaussElimination(SymDirectSolver):
+    def __init__(self, n, A, b):
+        super().__init__(n, A, b)
+
     @override
     def solve(self):
         A_bar = self.A.copy()
@@ -106,10 +111,13 @@ class SymGaussElimination(SymDirectSolver):
         U = aug[:, :self.n]  # first n columns
         b_new = aug[:, self.n:]  # last column
         solution = self.backward_substitution(U, b_new)
-        return solution
+        return sp.simplify(solution)
 
 
 class SymGaussJordan(SymDirectSolver):
+    def __init__(self, n, A, b):
+        super().__init__(n, A, b)
+
     @override
     def solve(self):
         A_bar = self.A.copy()
@@ -119,10 +127,13 @@ class SymGaussJordan(SymDirectSolver):
         b_new = aug[:, self.n:]
         aug = self.backward_elimination(U, b_new)
         solution = aug[:, self.n:]
-        return solution
+        return sp.simplify(solution)
 
 
 class SymDoolittleLUDecomposition(SymDirectSolver):
+    def __init__(self, n, A, b):
+        super().__init__(n, A, b)
+
     @override
     def solve(self):
         A_bar = self.A.copy()
@@ -153,10 +164,13 @@ class SymDoolittleLUDecomposition(SymDirectSolver):
         y = self.forward_substitution(L, b_bar)
         solution = self.backward_substitution(U, y)
 
-        return solution
+        return sp.simplify(solution)
 
 
 class SymCroutLUDecomposition(SymDirectSolver):
+    def __init__(self, n, A, b):
+        super().__init__(n, A, b)
+
     @override
     def solve(self):
         A_bar = self.A.copy().T  # Transpose for Crout method
@@ -190,10 +204,13 @@ class SymCroutLUDecomposition(SymDirectSolver):
         y = self.forward_substitution(L_Crout, b_bar)
         solution = self.backward_substitution(U_Crout, y)
 
-        return solution
+        return sp.simplify(solution)
 
 
 class SymCholeskyLUDecomposition(SymDirectSolver):
+    def __init__(self, n, A, b):
+        super().__init__(n, A, b)
+
     @override
     def solve(self):
         A_bar = self.A.copy()
@@ -231,6 +248,6 @@ class SymCholeskyLUDecomposition(SymDirectSolver):
         y = self.forward_substitution(L, b_bar)
         solution = self.backward_substitution(L.T, y)
 
-        return solution
+        return sp.simplify(solution)
 
 

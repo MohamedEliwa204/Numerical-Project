@@ -63,7 +63,13 @@
               }
             </span>
             } @else {
-            <span class="raw-eq">{{ eq }}</span>
+            <!-- Fallback: Apply parseMathParts to raw equation for subscript rendering -->
+            <span class="raw-eq">
+              @for (part of parseMathParts(eq); track $index) {
+              @if (part.isVar) { <span class="var-name">{{part.base}}<sub>{{part.sub}}</sub></span> }
+              @else { {{part.text}} }
+              }
+            </span>
             }
           </div>
           }
@@ -81,7 +87,12 @@
             @for (row of asLUStep(currentStep()).L; track $index) {
             <div class="matrix-row-display">
               @for (val of row; track $index) {
-              <div class="matrix-cell">{{ val }}</div>
+              <div class="matrix-cell">
+                @for (part of parseMathParts(toString(val)); track $index) {
+                @if (part.isVar) { <span>{{part.base}}<sub>{{part.sub}}</sub></span> }
+                @else { {{part.text}} }
+                }
+              </div>
               }
             </div>
             }
@@ -97,7 +108,12 @@
             @for (row of asLUStep(currentStep()).U; track $index) {
             <div class="matrix-row-display">
               @for (val of row; track $index) {
-              <div class="matrix-cell">{{ val }}</div>
+              <div class="matrix-cell">
+                @for (part of parseMathParts(toString(val)); track $index) {
+                @if (part.isVar) { <span>{{part.base}}<sub>{{part.sub}}</sub></span> }
+                @else { {{part.text}} }
+                }
+              </div>
               }
             </div>
             }
@@ -113,7 +129,12 @@
           <div class="group-label">Iteration Solution (x<sup>{{currentIndex() + 1}}</sup>)</div>
           <div class="vector-display solution-style">
             @for (val of asIterativeStep(currentStep())[0]; track $index) {
-            <div class="vector-cell">{{ val }}</div>
+            <div class="vector-cell">
+              @for (part of parseMathParts(toString(val)); track $index) {
+              @if (part.isVar) { <span>{{part.base}}<sub>{{part.sub}}</sub></span> }
+              @else { {{part.text}} }
+              }
+            </div>
             }
           </div>
         </div>
@@ -138,7 +159,12 @@
             @for (row of asDirectStep(currentStep())[0]; track $index) {
             <div class="matrix-row-display">
               @for (val of row; track $index) {
-              <div class="matrix-cell">{{ val }}</div>
+              <div class="matrix-cell">
+                @for (part of parseMathParts(toString(val)); track $index) {
+                @if (part.isVar) { <span>{{part.base}}<sub>{{part.sub}}</sub></span> }
+                @else { {{part.text}} }
+                }
+              </div>
               }
             </div>
             }
@@ -148,7 +174,12 @@
           <div class="group-label">Vector B</div>
           <div class="vector-column">
             @for (val of asDirectStep(currentStep())[1]; track $index) {
-            <div class="vector-cell">{{ val }}</div>
+            <div class="vector-cell">
+              @for (part of parseMathParts(toString(val)); track $index) {
+              @if (part.isVar) { <span>{{part.base}}<sub>{{part.sub}}</sub></span> }
+              @else { {{part.text}} }
+              }
+            </div>
             }
           </div>
         </div>

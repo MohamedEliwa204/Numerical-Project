@@ -108,28 +108,28 @@ class NumericalSolverFactory(AbstractSolverFactory):
 
 class SymbolicSolverFactory(AbstractSolverFactory):
 
-    def create_gauss_elimination(self, n):
-        return SymGaussElimination(n)
+    def create_gauss_elimination(self, n, A, b):
+        return SymGaussElimination(n, A, b)
 
-    def create_gauss_jordan(self, n):
-        return SymGaussJordan(n)
+    def create_gauss_jordan(self, n, A, b):
+        return SymGaussJordan(n, A, b)
 
-    def create_doolittle_lu(self, n):
-        return SymDoolittleLUDecomposition(n)
+    def create_doolittle_lu(self, n, A, b):
+        return SymDoolittleLUDecomposition(n, A, b)
 
-    def create_crout_lu(self, n):
-        return SymCroutLUDecomposition(n)
+    def create_crout_lu(self, n, A, b):
+        return SymCroutLUDecomposition(n, A, b)
 
-    def create_cholesky(self, n):
-        return SymCholeskyLUDecomposition(n)
+    def create_cholesky(self, n, A, b):
+        return SymCholeskyLUDecomposition(n, A, b)
 
-    def create_gauss_seidel(self, n):
+    def create_gauss_seidel(self, n, A, b):
         raise NotImplementedError("Symbolic iterative methods not yet implemented")
 
-    def create_jacobi(self, n):
+    def create_jacobi(self, n, A, b):
         raise NotImplementedError("Symbolic iterative methods not yet implemented")
 
-    def create_solver(self, method_name, n):
+    def create_solver(self, method_name, n, A, b):
         method_name = method_name.lower().replace(' ', '_')
 
         method_map = {
@@ -143,7 +143,7 @@ class SymbolicSolverFactory(AbstractSolverFactory):
         }
 
         if method_name in method_map:
-            return method_map[method_name](n)
+            return method_map[method_name](n, A, b)
         else:
             raise ValueError(f"Unknown method '{method_name}'. Available methods: {', '.join(method_map.keys())}")
 
@@ -164,7 +164,10 @@ if __name__ == "__main__":
 
     print("\n=== Symbolic Solver Factory ===")
     sym_factory = SymbolicSolverFactory()
-    sym_solver = sym_factory.create_solver('gauss_elimination', n=3)
+    # Test with symbolic values (strings)
+    A_sym = [["a", "b"], ["c", "d"]]
+    b_sym = ["p", "q"]
+    sym_solver = sym_factory.create_solver('gauss_elimination', n=2, A=A_sym, b=b_sym)
     print(f"Solution:\n{sym_solver.solve()}")
 
     print("\n=== Available Methods ===")

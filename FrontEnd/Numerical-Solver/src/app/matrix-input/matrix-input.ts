@@ -31,9 +31,20 @@ export class MatrixInput {
     const currentRhs = this.rhs();
 
     const newMatrix: string[][] = Array(n).fill(0).map((_, i) =>
-      Array(n).fill(0).map((_, j) => (currentMatrix[i] && currentMatrix[i][j]) || "0")
+      Array(n).fill(0).map((_, j) => {
+        // Check if the row exists and the cell exists
+        if (currentMatrix[i] && currentMatrix[i][j] !== undefined && currentMatrix[i][j] !== null) {
+          return currentMatrix[i][j];
+        }
+        return "0";
+      })
     );
-    const newRhs: string[] = Array(n).fill(0).map((_, i) => currentRhs[i] || "0");
+    const newRhs: string[] = Array(n).fill(0).map((_, i) => {
+      if (currentRhs[i] !== undefined && currentRhs[i] !== null) {
+        return currentRhs[i];
+      }
+      return "0";
+    });
 
     this.matrix.set(newMatrix);
     this.rhs.set(newRhs);

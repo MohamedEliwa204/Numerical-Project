@@ -112,4 +112,9 @@ export class StepsPanel {
     }
     return parts;
   }
+
+  // Helper to convert any value to string for display
+  toString(val: any): string {
+    return String(val);
+  }
 }
