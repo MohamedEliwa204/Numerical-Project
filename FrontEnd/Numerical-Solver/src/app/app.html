@@ -15,7 +15,8 @@
       <!-- Center: Matrix Input -->
       <div class="center-panel">
         <app-matrix-input [size]="numEquations()" (sizeChange)="numEquations.set($event)"
-          (matrixChange)="onMatrixDataChange($event)">
+          (matrixChange)="onMatrixDataChange($event)"
+          (modeChange)="mode.set($event)">
         </app-matrix-input>
 
         <!-- Results/Error Panel -->

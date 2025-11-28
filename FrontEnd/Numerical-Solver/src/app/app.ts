@@ -18,11 +18,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class App {
   selectedMethod = signal<MethodType>('Gauss Elimination');
-  numEquations = signal(3);
+  numEquations = signal<number>(3);
 
   matrixA = signal<string[][]>([]);
   vectorB = signal<string[]>([]);
-  precision = signal<number>(4);
+  precision = signal<number>(5);
+  mode = signal<'numerical' | 'symbolic'>('numerical');
 
   solution = signal<string[] | null>(null);
   executionTime = signal(0);
@@ -65,41 +66,43 @@ export class App {
     let methodUsed: string = 'GaussElimination'
     switch (this.selectedMethod()) {
       case 'Gauss Elimination':
-        methodUsed = 'GaussElimination'
+        methodUsed = 'gauss_elimination'
         break;
       case 'Gauss-Jordan':
-        methodUsed = 'GaussJordan'
+        methodUsed = 'gauss_jordan'
         break;
       case 'LU Decomposition':
         switch (params.luForm) {
           case 'Doolittle':
-            methodUsed = 'DoolittleLUDecomposition'
+            methodUsed = 'doolittle_lu'
             break;
           case 'Crout':
-            methodUsed = 'CroutLUDecomposition'
+            methodUsed = 'crout_lu'
             break;
           case 'Cholesky':
-            methodUsed = 'CholeskyLUDecomposition'
+            methodUsed = 'cholesky'
             break;
         }
         break;
       case 'Gauss-Seidel':
-        methodUsed = 'GaussSeidel'
+        methodUsed = 'gauss_seidel'
         break;
       case 'Jacobi-Iteration':
-        methodUsed = 'JacobiIteration'
+        methodUsed = 'jacobi'
         break;
     }
 
-    console.log('Solving with:', methodUsed);
-    console.log('Matrix A:', this.matrixA());
-    console.log('Vector B:', this.vectorB());
-    console.log('Precision: ', this.precision());
-    console.log('Params:', params);
+    // console.log('Solving with:', methodUsed);
+    // console.log('Matrix A:', this.matrixA());
+    // console.log('Vector B:', this.vectorB());
+    // console.log('Precision: ', this.precision());
+    // console.log('Params:', params);
 
     let dataSent: RequestData = {
       A: this.matrixA(),
       b: this.vectorB(),
+      mode : this.mode(),
+      n : this.numEquations(),
       method: methodUsed,
       precision: this.precision(),
       withScaling: params.useScaling,
@@ -108,13 +111,29 @@ export class App {
       abs_rel_error: (!this.num_of_ites_condition()) ? params.tolerance : undefined
     }
 
+    console.log("DATA TO BE SENT TO BACKEND:")
+    console.log(dataSent)
+
     this.api.getSolution(dataSent).subscribe({
       next: (response: ResponseData) => {
         console.log('Response from Backend: ', response);
 
+        // Handle both numerical and symbolic solutions
         const result = response.solution.map((val) => {
-          return val.toFixed(this.precision())
-        })
+          // If it's a number, format it; if it's a string (symbolic), keep as-is
+          if (typeof val === 'number') {
+            return val.toFixed(this.precision());
+          } else if (typeof val === 'string') {
+            // Check if it's a numeric string
+            const numVal = parseFloat(val);
+            if (!isNaN(numVal) && isFinite(numVal)) {
+              return numVal.toFixed(this.precision());
+            }
+            // It's a symbolic expression, return as-is
+            return val;
+          }
+          return String(val);
+        });
         this.solution.set(result);
 
         this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')

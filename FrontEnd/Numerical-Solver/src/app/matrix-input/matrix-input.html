@@ -3,7 +3,7 @@
         <h2 class="panel-title">System of Linear Equations</h2>
         <div class="precision-control">
             <label>Precision:</label>
-            <input type="number" [ngModel]="precision()" (ngModelChange)="onPrecisionChange($event)" min="1" max="10"
+            <input type="number" [ngModel]="precision()" (ngModelChange)="onPrecisionChange($event)" min="1" max="12"
                 class="small-input">
         </div>
     </div>
@@ -12,7 +12,7 @@
     <div class="controls-area">
         <div class="control-group">
             <label class="control-label">Total Equations (N)</label>
-            <input type="number" [ngModel]="size" (ngModelChange)="onSizeChange($event)" min="2" max="10"
+            <input type="number" [ngModel]="size" (ngModelChange)="onSizeChange($event)" min="2" max="30"
                 class="main-input">
         </div>
         <div class="control-hint">
@@ -23,7 +23,6 @@
     <!-- Scrollable Matrix Area -->
     <div class="matrix-scroll-area">
         <div class="matrix-content">
-            <!-- UPDATED: New Row-Based Layout -->
             <div class="matrix-table">
 
                 <!-- Headers Row -->

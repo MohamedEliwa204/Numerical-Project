@@ -1,7 +1,9 @@
 export interface RequestData {
     A : string[][],
     b : string[],
+    mode : "numerical" | "symbolic",
     method : string,
+    n : number,
     precision : number,
     withScaling : boolean,
     initial_guess? : string[],

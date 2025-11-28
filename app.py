@@ -87,21 +87,40 @@ def solve_system():
 
         raw_steps = getattr(solver, 'steps', [])
 
-        formatted_steps = []
-        if raw_steps:
-            for step in raw_steps:
-                converted_tuple = [x.tolist() if hasattr(x, 'tolist') else x for x in step]
-                formatted_steps.append(converted_tuple)
-        
+        # Convert all steps (including SymPy objects) to serializable form
+        formatted_steps = to_serializable(raw_steps)
+
+        # Convert solution to JSON-serializable format
+        solution_list = to_serializable(solution)
+
         return jsonify({
-            'solution': solution.tolist(),
+            'solution': solution_list,
             'executionTime': executionTime,
             'num_of_ites': getattr(solver, 'num_of_ites', None),
             'steps': formatted_steps,
-            'steps_descriptions' : getattr(solver, 'describitive_steps', None),
-            'Xs_steps' : getattr(solver, 'Xs_steps', None),
-            'Ys_steps' : getattr(solver, 'Ys_steps', None)
+            'steps_descriptions': to_serializable(getattr(solver, 'describitive_steps', None)),
+            'Xs_steps': to_serializable(getattr(solver, 'Xs_steps', None)),
+            'Ys_steps': to_serializable(getattr(solver, 'Ys_steps', None))
         })
+        
+        
+# Helper to convert any value to JSON-serializable format
+def to_serializable(val):
+    if val is None:
+        return None
+    if isinstance(val, (int, float, str, bool)):
+        return val
+    if hasattr(val, 'tolist'):
+        # NumPy arrays / SymPy matrices
+        return to_serializable(val.tolist())
+    # Handle any iterable (list, tuple, etc.), but avoid treating strings as iterables
+    try:
+        if not isinstance(val, (str, bytes)) and hasattr(val, '__iter__'):
+            return [to_serializable(item) for item in val]
+    except TypeError:
+        pass
+    # Fallback: SymPy objects and everything else
+    return str(val)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000) 
