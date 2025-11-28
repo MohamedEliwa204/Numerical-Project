@@ -54,6 +54,95 @@ export class App {
     this.precision.set(data.precision);
   }
 
+  // Helper to check for consistency
+  checkSystemState(matrix: string[][], rhs: string[]): string | null { // UPDATED: Added consistency check
+    // 1. Try parse to numbers
+    const n = matrix.length;
+    const A: number[][] = [];
+    const B: number[] = [];
+
+    for(let i=0; i<n; i++) {
+      const row: number[] = [];
+      for(let j=0; j<n; j++) {
+        const val = parseFloat(matrix[i][j]);
+        if(isNaN(val)) return null; // Symbolic mode, skip check
+        row.push(val);
+      }
+      const bVal = parseFloat(rhs[i]);
+      if(isNaN(bVal)) return null;
+      B.push(bVal);
+      A.push(row);
+    }
+
+    // 2. Form Augmented Matrix [A | B]
+    const aug = A.map((row, i) => [...row, B[i]]);
+    const cols = n + 1;
+
+    // 3. Gaussian Elimination to REF
+    let pivotRow = 0;
+    for (let col = 0; col < n && pivotRow < n; col++) {
+      // Find pivot
+      let maxRow = pivotRow;
+      for (let i = pivotRow + 1; i < n; i++) {
+        if (Math.abs(aug[i][col]) > Math.abs(aug[maxRow][col])) {
+          maxRow = i;
+        }
+      }
+
+      if (Math.abs(aug[maxRow][col]) < 1e-9) {
+        continue; // Column is zero, move to next col
+      }
+
+      // Swap
+      [aug[pivotRow], aug[maxRow]] = [aug[maxRow], aug[pivotRow]];
+
+      // Eliminate
+      for (let i = pivotRow + 1; i < n; i++) {
+        const factor = aug[i][col] / aug[pivotRow][col];
+        for (let j = col; j < cols; j++) {
+          aug[i][j] -= factor * aug[pivotRow][j];
+        }
+      }
+      pivotRow++;
+    }
+
+    // 4. Calculate Ranks
+    let rankA = 0;
+    let rankAug = 0;
+
+    for (let i = 0; i < n; i++) {
+      let rowIsZeroA = true;
+      let rowIsZeroAug = true;
+
+      for (let j = 0; j < n; j++) {
+        if (Math.abs(aug[i][j]) > 1e-9) {
+          rowIsZeroA = false;
+          break;
+        }
+      }
+
+      for (let j = 0; j < cols; j++) {
+        if (Math.abs(aug[i][j]) > 1e-9) {
+          rowIsZeroAug = false;
+          break;
+        }
+      }
+
+      if (!rowIsZeroA) rankA++;
+      if (!rowIsZeroAug) rankAug++;
+    }
+
+    // 5. Determine State
+    if (rankA < rankAug) {
+      return "System is inconsistent (No Solution).";
+    }
+    if (rankA < n) {
+      return "System has infinite number of solutions.";
+    }
+
+    return null; // Unique solution
+  }
+
   onSolve(params: SolverParams) {
     // const startTime = performance.now();
     this.errorHappened.set(false)
@@ -64,6 +153,13 @@ export class App {
     this.xsEquations.set([]);
     this.ysEquations.set([]);
     this.message.set('');
+
+    const consistencyError = this.checkSystemState(this.matrixA(), this.vectorB());
+    if (consistencyError) {
+      this.errorMessage.set(consistencyError);
+      this.errorHappened.set(true);
+      return;
+    }
 
     let methodUsed: string = 'GaussElimination'
     switch (this.selectedMethod()) {
