@@ -130,12 +130,12 @@ export class App {
         const result = response.solution.map((val) => {
           // If it's a number, format it; if it's a string (symbolic), keep as-is
           if (typeof val === 'number') {
-            return val.toFixed(this.precision());
+            return val.toPrecision(this.precision());
           } else if (typeof val === 'string') {
             // Check if it's a numeric string
             const numVal = parseFloat(val);
             if (!isNaN(numVal) && isFinite(numVal)) {
-              return numVal.toFixed(this.precision());
+              return numVal.toPrecision(this.precision());
             }
             // It's a symbolic expression, return as-is
             return val;

@@ -17,7 +17,9 @@ export class Parameters {
 
   initialGuess = signal<string[]>([]);
   tolerance = signal(0.0001);
-  maxIterations = signal(50);
+  maxIterations = 200;  // Changed to regular property (constant limit)
+  minIterations = 1;    // Changed to regular property (constant limit)
+  iterationsNum = signal(20);
   luForm = signal<LUForm>('Doolittle');
   stopCondition = signal<StopCondition>('Number of Iterations');
   useScaling = signal(false);
@@ -48,11 +50,30 @@ export class Parameters {
     });
   }
 
+  onIterationsChange(val: any) {
+    // Parse to number, default to minIterations if invalid
+    let numVal = parseInt(val, 10);
+    
+    // If not a valid number, set to minimum
+    if (isNaN(numVal) || !isFinite(numVal)) {
+      numVal = this.minIterations;
+    }
+    
+    // Clamp between min and max
+    if (numVal > this.maxIterations) {
+      numVal = this.maxIterations;
+    } else if (numVal < this.minIterations) {
+      numVal = this.minIterations;
+    }
+    
+    this.iterationsNum.set(numVal);
+  }
+
   emitSolve() {
     this.solve.emit({
       initialGuess: this.initialGuess(),
       tolerance: this.tolerance(),
-      maxIterations: this.maxIterations(),
+      maxIterations: this.iterationsNum(),  // Use iterationsNum instead of maxIterations
       luForm: this.luForm(),
       useScaling: this.useScaling()
     });

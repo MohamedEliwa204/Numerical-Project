@@ -55,29 +55,43 @@ export class MatrixInput {
     this.emitChanges();
   }
 
-  onSizeChange(val: number) {
-    if (val > this.maxSize) {
-      this.size = this.maxSize
+  onSizeChange(val: any) {
+    // Parse to number, default to minSize if invalid
+    let numVal = parseInt(val, 10);
+    
+    // If not a valid number, set to minimum
+    if (isNaN(numVal) || !isFinite(numVal)) {
+      numVal = this.minSize;
     }
-    else if (val < this.minSize) {
-      this.size = this.minSize
+    
+    // Clamp between min and max
+    if (numVal > this.maxSize) {
+      numVal = this.maxSize;
+    } else if (numVal < this.minSize) {
+      numVal = this.minSize;
     }
-    else {
-      this.size = val
-    }
-    this.sizeChange.emit(val);
+    
+    this.size = numVal;
+    this.sizeChange.emit(numVal);
   }
 
-  onPrecisionChange(val: number) {
-    if (val > this.maxPrecision) {
-      this.precision.set(this.maxPrecision)
+  onPrecisionChange(val: any) {
+    // Parse to number, default to minPrecision if invalid
+    let numVal = parseInt(val, 10);
+    
+    // If not a valid number, set to minimum
+    if (isNaN(numVal) || !isFinite(numVal)) {
+      numVal = this.minPrecision;
     }
-    else if (val < this.minPrecision) {
-      this.precision.set(this.minPrecision)
+    
+    // Clamp between min and max
+    if (numVal > this.maxPrecision) {
+      numVal = this.maxPrecision;
+    } else if (numVal < this.minPrecision) {
+      numVal = this.minPrecision;
     }
-    else {
-      this.precision.set(val);
-    }
+    
+    this.precision.set(numVal);
     this.emitChanges();
   }
 
