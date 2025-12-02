@@ -3,7 +3,7 @@
         <h2 class="panel-title">System of Linear Equations</h2>
         <div class="precision-control">
             <label>Precision:</label>
-            <input type="number" [ngModel]="precision()" (ngModelChange)="onPrecisionChange($event)" [min]="minPrecision" [max]="maxPrecision"
+            <input type="number" [formControl]="precision" [min]="minPrecision" [max]="maxPrecision"
                 class="small-input">
         </div>
     </div>
@@ -12,7 +12,7 @@
     <div class="controls-area">
         <div class="control-group">
             <label class="control-label">Total Equations (N)</label>
-            <input type="number" [ngModel]="size" (ngModelChange)="onSizeChange($event)" [min]="minSize" [max]="maxSize"
+            <input type="number" [formControl]="nativeSize" [min]="minSize" [max]="maxSize"
                 class="main-input">
         </div>
         <div class="control-hint">

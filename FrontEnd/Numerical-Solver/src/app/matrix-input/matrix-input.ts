@@ -1,19 +1,39 @@
-import { Component, EventEmitter, Input, Output, signal, SimpleChanges } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, EventEmitter, Input, Output, signal, SimpleChanges, OnInit } from '@angular/core';
+import { FormsModule, FormControl, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-matrix-input',
-  imports: [FormsModule],
+  imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './matrix-input.html',
   styleUrl: './matrix-input.css',
 })
-export class MatrixInput {
+export class MatrixInput implements OnInit {
   @Input() size: number = 3;
   @Output() sizeChange = new EventEmitter<number>();
   @Output() matrixChange = new EventEmitter<{ A: string[][], B: string[], precision: number }>();
   @Output() modeChange = new EventEmitter<'numerical' | 'symbolic'>();
 
-  precision = signal(5);
+  // precision = signal(5);
+  precision = new FormControl<number>(5, {nonNullable : true})
+  nativeSize = new FormControl<number>(3, {nonNullable : true})
+  constructor() {
+    this.precision.valueChanges.subscribe(value => {
+      this.onPrecisionChange(value)
+    })
+    this.nativeSize.valueChanges.subscribe(val => {
+      const validated = this.onSizeChange(val)
+      if (val !== validated) {
+        this.nativeSize.setValue(validated, { emitEvent: false })
+      }
+      this.regenerateMatrix(validated)
+    })
+  }
+
+  ngOnInit() {
+    this.nativeSize.setValue(this.size, {emitEvent: false});
+    this.regenerateMatrix(this.size);
+  }
+  
   minPrecision = 1
   maxPrecision = 15
   matrix = signal<string[][]>([]);
@@ -21,11 +41,11 @@ export class MatrixInput {
   maxSize = 50
   rhs = signal<string[]>([]);
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['size']) {
-      this.regenerateMatrix(this.size);
-    }
-  }
+  // ngOnChanges(changes: SimpleChanges) {
+  //   if (changes['size']) {
+  //     this.regenerateMatrix(this.size);
+  //   }
+  // }
 
   regenerateMatrix(n: number) {
     if (n < 2) return;
@@ -55,7 +75,7 @@ export class MatrixInput {
     this.emitChanges();
   }
 
-  onSizeChange(val: any) {
+  onSizeChange(val: any): number {
     // Parse to number, default to minSize if invalid
     let numVal = parseInt(val, 10);
     
@@ -73,12 +93,13 @@ export class MatrixInput {
     
     this.size = numVal;
     this.sizeChange.emit(numVal);
+    return numVal;
   }
 
   onPrecisionChange(val: any) {
     // Parse to number, default to minPrecision if invalid
     let numVal = parseInt(val, 10);
-    
+
     // If not a valid number, set to minimum
     if (isNaN(numVal) || !isFinite(numVal)) {
       numVal = this.minPrecision;
@@ -91,7 +112,7 @@ export class MatrixInput {
       numVal = this.minPrecision;
     }
     
-    this.precision.set(numVal);
+    this.precision.setValue(numVal);
     this.emitChanges();
   }
 
@@ -150,7 +171,7 @@ export class MatrixInput {
     this.matrixChange.emit({
       A: this.matrix(),
       B: this.rhs(),
-      precision: this.precision()
+      precision: this.precision.value
     });
   }
 
