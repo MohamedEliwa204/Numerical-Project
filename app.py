@@ -27,7 +27,7 @@ def solve_system():
         initial_guess = data.get('initial_guess')
         num_of_ites = data.get('num_of_ites')
         abs_rel_error = data.get('abs_rel_error')
-        withScaling = data.get('scaling', False)
+        withScaling = data.get('withScaling', False)
         n = data.get('n')
         factory: AbstractSolverFactory = None
         solver = None
