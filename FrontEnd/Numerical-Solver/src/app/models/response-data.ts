@@ -1,6 +1,10 @@
 export interface ResponseData {
-    solution : number[],
+    solution : (number | string)[],
     executionTime : number,
     num_of_ites? : number,
-    steps : number[][],
+    steps : SimulationStep[],
+    steps_descriptions : string[],
+    Xs_steps : string[],
+    Ys_steps : string[],
+    message : string
 }

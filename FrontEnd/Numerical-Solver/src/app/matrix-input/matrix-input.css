@@ -107,29 +107,47 @@
     min-width: 100%;
 }
 
-.equation-grid {
-    display: flex;
-    gap: 1rem;
-}
-
-.matrix-block,
-.vector-block {
+.matrix-table {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-.matrix-label {
+.headers-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.25rem;
+    padding-right: 1rem;
+}
+
+.eqn-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.a-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.b-group {
+    display: flex;
+}
+
+.spacer-label {
+    width: 2rem;
+}
+
+.center-text {
     text-align: center;
+}
+
+.matrix-label {
     font-size: 0.75rem;
     font-weight: 700;
     color: #94a3b8;
-    margin-bottom: 0.25rem;
-}
-
-.matrix-row {
-    display: flex;
-    gap: 0.5rem;
+    text-transform: uppercase;
 }
 
 .cell-wrapper {
@@ -154,7 +172,7 @@
 }
 
 .matrix-input {
-    width: 5rem;
+    width: 6rem;
     height: 3rem;
     text-align: center;
     border: 1px solid #cbd5e1;
@@ -170,14 +188,12 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-.equals-column {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-top: 2rem;
+.matrix-input.invalid {
+    border-color: #ef4444;
+    background-color: #fef2f2;
 }
 
-.equals-symbol {
+.eq-symbol {
     height: 3rem;
     width: 2rem;
     display: flex;
@@ -187,13 +203,9 @@
     font-weight: bold;
 }
 
-.vector-row {
-    height: 3rem;
-}
-
 .vector-input {
-    width: 5rem;
-    height: 100%;
+    width: 6rem;
+    height: 3rem;
     text-align: center;
     border: 1px solid #bfdbfe;
     border-radius: 0.25rem;
@@ -208,4 +220,9 @@
 .vector-input:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.vector-input.invalid {
+    border-color: #ef4444;
+    background-color: #fef2f2;
 }

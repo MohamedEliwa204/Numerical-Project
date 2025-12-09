@@ -3,7 +3,7 @@
         <h2 class="panel-title">System of Linear Equations</h2>
         <div class="precision-control">
             <label>Precision:</label>
-            <input type="number" [ngModel]="precision()" (ngModelChange)="onPrecisionChange($event)" min="1" max="10"
+            <input type="number" [formControl]="precision" [min]="minPrecision" [max]="maxPrecision"
                 class="small-input">
         </div>
     </div>
@@ -12,53 +12,53 @@
     <div class="controls-area">
         <div class="control-group">
             <label class="control-label">Total Equations (N)</label>
-            <input type="number" [ngModel]="size" (ngModelChange)="onSizeChange($event)" min="2" max="10"
+            <input type="number" [formControl]="nativeSize" [min]="minSize" [max]="maxSize"
                 class="main-input">
         </div>
         <div class="control-hint">
-            * Matrix creates an NxN system automatically
+            * Supports symbolic input (e.g., "a", "2*b + c")
         </div>
     </div>
 
     <!-- Scrollable Matrix Area -->
     <div class="matrix-scroll-area">
         <div class="matrix-content">
-            <div class="equation-grid">
+            <div class="matrix-table">
 
-                <!-- A Matrix -->
-                <div class="matrix-block">
-                    <div class="matrix-label">Coefficient Matrix (A)</div>
-                    @for (row of matrix(); track i; let i = $index) {
-                    <div class="matrix-row">
+                <!-- Headers Row -->
+                <div class="headers-row">
+                    <div class="matrix-label center-text" [style.flex-grow]="1">Coefficient Matrix (A)</div>
+                    <div class="spacer-label"></div>
+                    <div class="matrix-label center-text" style="width: 6rem">Constants (B)</div>
+                </div>
+
+                <!-- Data Rows (Iterate Rows) -->
+                @for (row of matrix(); track i; let i = $index) {
+                <div class="eqn-row">
+
+                    <!-- Matrix A Inputs -->
+                    <div class="a-group">
                         @for (col of row; track j; let j = $index) {
                         <div class="cell-wrapper">
-                            <input type="number" [ngModel]="matrix()[i][j]"
+                            <input type="text" [ngModel]="matrix()[i][j]"
                                 (ngModelChange)="updateMatrixCell(i, j, $event)" placeholder="a{{i}}{{j}}"
-                                class="matrix-input">
+                                [class.invalid]="!isValid(matrix()[i][j])" class="matrix-input">
                             <span class="cell-tooltip">x{{j+1}}</span>
                         </div>
                         }
                     </div>
-                    }
-                </div>
 
-                <!-- Equals Sign -->
-                <div class="equals-column">
-                    @for (row of matrix(); track $index) {
-                    <div class="equals-symbol">=</div>
-                    }
-                </div>
+                    <!-- Equals Sign -->
+                    <div class="eq-symbol">=</div>
 
-                <!-- B Vector -->
-                <div class="vector-block">
-                    <div class="matrix-label">Constants (B)</div>
-                    @for (val of rhs(); track i; let i = $index) {
-                    <div class="vector-row">
-                        <input type="number" [ngModel]="rhs()[i]" (ngModelChange)="updateRhsCell(i, $event)"
-                            placeholder="b{{i}}" class="vector-input">
+                    <!-- Vector B Input -->
+                    <div class="b-group">
+                        <input type="text" [ngModel]="rhs()[i]" (ngModelChange)="updateRhsCell(i, $event)"
+                            placeholder="b{{i}}" [class.invalid]="!isValid(rhs()[i])" class="vector-input">
                     </div>
-                    }
+
                 </div>
+                }
 
             </div>
         </div>

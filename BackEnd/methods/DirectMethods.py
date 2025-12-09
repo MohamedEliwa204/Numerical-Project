@@ -6,6 +6,9 @@ class GaussElimination(DirectSolver):
         A_bar = self.A.copy()
         b_bar = self.b.copy()
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
 
         self.forward_elimination(A_bar, b_bar)
         solution = self.backward_substitution(A_bar, b_bar)
@@ -16,6 +19,9 @@ class GaussJordan(DirectSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
@@ -30,96 +36,144 @@ class DoolittleLUDecomposition(DirectSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
 
         n = A_bar.shape[0]
         L = np.zeros((n, n))
-        
-        # compute scaling if needed and raise error for singularity
-        self.scaling(A_bar) if self.withScaling else None
+        np.fill_diagonal(L, 1)
 
-        for k in range(0, n - 1):  # row traverse(find the row to pivot) and pivoting
-            old_row = k
+        # Compute scaling if needed and raise error for singularity
+        if self.withScaling:
+            self.scaling(A_bar)
+
+        for k in range(0, n - 1):
+            # Find pivot row using partial pivoting
             max_index = k
-            if self.withScaling is False:
-                for i in range(k, n):
-                    if abs(A_bar[i][k]) > abs(A_bar[max_index][k]):
-                        max_index = i
-            else:
-                big = abs(A_bar[k][k]) / self.scalar[k]
+
+            if self.withScaling:
+                # Pivoting with scaling
+                big = self.round_significant(abs(A_bar[k][k]) / self.scalar[k])
                 for i in range(k + 1, n):
-                    dummy = abs(A_bar[i][k]) / self.scalar[i]
+                    dummy = self.round_significant(abs(A_bar[i][k]) / self.scalar[i])
                     if dummy > big:
                         big = dummy
                         max_index = i
+            else:
+                # Pivoting without scaling
+                max_val = self.round_significant(abs(A_bar[k][k]))
+                for i in range(k, n):
+                    current_val = self.round_significant(abs(A_bar[i][k]))
+                    if current_val > max_val:
+                        max_val = current_val
+                        max_index = i
 
+            # Perform row swapping if needed
             if max_index != k:
                 A_bar[[k, max_index]] = A_bar[[max_index, k]]
                 b_bar[[k, max_index]] = b_bar[[max_index, k]]
-                if self.scalar is not None:
+                if self.withScaling:
                     self.scalar[[k, max_index]] = self.scalar[[max_index, k]]
                 if k > 0:
-                    L[[k, max_index], :k] = L[[max_index, k], :k] # swap factors in L too
+                    L[[k, max_index], :k] = L[[max_index, k], :k]
 
-            if self.isSingular(A_bar[k][k], k):  # Check for singularity (pivot is zero)
+            # Check for singularity
+            if self.isSingular(A_bar[k][k], k):
                 raise ValueError("Matrix is singular or near-singular.")
             
-            for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
-                factor = A_bar[i][k] / A_bar[k][k]
-                L[i][k] = factor  # to store factors
-                A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+            # Perform elimination
+            for i in range(k + 1, n):
+                factor = self.round_significant(A_bar[i][k] / A_bar[k][k])
+                L[i][k] = factor
+                tempRow = self.round_significant(factor * A_bar[k, k:])
+                A_bar[i, k:] = self.round_significant(A_bar[i, k:] - tempRow)
+                self.steps.append((L.copy(), A_bar.copy()))
                 
-        if self.isSingular(A_bar[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
+        # Check last pivot for singularity
+        if self.isSingular(A_bar[n-1][n-1], n-1):
             raise ValueError("Matrix is singular or near-singular.")
         
-        np.fill_diagonal(L, 1)
         U = A_bar
 
-        y = self.forward_substitution(L, b_bar)  # result of the system Ly = b
-        solution = self.backward_substitution(U, y)  # result of Ux = y
-        return np.round(solution, decimals=self.precision)
+        y = self.forward_substitution(L, b_bar)
+        solution = self.backward_substitution(U, y)
+        return solution
 
 
 class CroutLUDecomposition(DirectSolver):
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
         A_bar = self.A.copy().T  # use the transpose and apply same Doolittle logic
         b_bar = self.b.copy()
 
         n = A_bar.shape[0]
         L = np.zeros((n, n))
         o = np.arange(n)   # To track the order of solution
+        np.fill_diagonal(L, 1)
 
-        for k in range(0, n - 1):  # we need custom pivoting method so we don't touch b matrix
+        # Compute scaling if needed
+        if self.withScaling:
+            self.scaling(A_bar)
+
+        for k in range(0, n - 1):
+            # Find pivot row with optional scaling
             max_index = k
-            for i in range(k, n):
-                if abs(A_bar[i][k]) > abs(A_bar[max_index][k]):
-                    max_index = i
+
+            if self.withScaling:
+                # Pivoting with scaling
+                big = self.round_significant(abs(A_bar[k][k]) / self.scalar[k])
+                for i in range(k + 1, n):
+                    dummy = self.round_significant(abs(A_bar[i][k]) / self.scalar[i])
+                    if dummy > big:
+                        big = dummy
+                        max_index = i
+            else:
+                # Pivoting without scaling
+                for i in range(k, n):
+                    if abs(A_bar[i][k]) > abs(A_bar[max_index][k]):
+                        max_index = i
+
             if max_index != k:
                 # Swap rows in A_bar (equivalent to swapping cols in A)
                 A_bar[[k, max_index]] = A_bar[[max_index, k]]
                 # Swap the order tracker (to keep order of the right solutions)
                 o[[k, max_index]] = o[[max_index, k]]
+                # Swap scaling factors if using scaling
+                if self.withScaling:
+                    self.scalar[[k, max_index]] = self.scalar[[max_index, k]]
                 # swap rows in L (factors)
-                L[[k, max_index]] = L[[max_index, k]]
+                if k > 0:
+                    L[[k, max_index], :k] = L[[max_index, k], :k]
 
-            if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot is zero)
+            if self.isSingular(A_bar[k][k], k):  # Check for singularity
                 raise ValueError("Matrix is singular or near-singular.")
             for i in range(k + 1, n):  # row traverse (apply the elimination for specific row)
-                factor = A_bar[i][k] / A_bar[k][k]
+                factor = self.round_significant(A_bar[i][k] / A_bar[k][k])
                 L[i][k] = factor  # to store factors
-                A_bar[i, k:] = np.round(A_bar[i, k:] - factor * A_bar[k, k:], decimals=self.precision)
+                tempRow = self.round_significant(factor * A_bar[k, k:])
+                A_bar[i, k:] = self.round_significant(A_bar[i, k:] - tempRow)
+                # For Crout: L_crout = A_bar.T (lower), U_crout = L.T (upper with 1s on diagonal)
+                # Ensure diagonal has 1s before creating step
+                L_step = L.copy()
+                np.fill_diagonal(L_step, 1)
+                self.steps.append((A_bar.copy().T, L_step.T))
                 
-        if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last pivot after elimination is zero)
+        if self.isSingular(A_bar[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
 
-        np.fill_diagonal(L, 1)
+        # For Crout: L has the factors, U has 1s on diagonal
+        np.fill_diagonal(L, 1)  # This becomes U_Crout after transpose
         U = A_bar
 
-        L_Crout = U.T
-        U_Crout = L.T
+        L_Crout = U.T   # Lower triangular with computed values
+        U_Crout = L.T   # Upper triangular with 1s on diagonal
 
         y = self.forward_substitution(L_Crout, b_bar) # result of the system Ly = b
         UnOrdered_solution = self.backward_substitution(U_Crout, y)  # result of Ux = y
@@ -129,27 +183,37 @@ class CroutLUDecomposition(DirectSolver):
         for i in range(n):
             Ordered_solution[o[i]] = UnOrdered_solution[i]
 
-        return np.round(Ordered_solution, decimals=self.precision)
+        return Ordered_solution
 
    
 class CholeskyLUDecomposition(DirectSolver): 
     @override
     def solve(self):
         self.steps.clear()
+        self.describitive_steps.clear()
+        self.Xs_steps.clear()
+        self.Ys_steps.clear()
         A_bar = self.A.copy()
         b_bar = self.b.copy()
         n = A_bar.shape[0]
         
         if not np.array_equal(A_bar, A_bar.T):  # Check for symmetry
             raise ValueError("Matrix is not symmetric")
-        
+        U = np.zeros((n, n))
+        L = np.zeros((n, n))
         for k in range(0, n):
             for i in range(0, k): # calculate the elements below the diagonal
-                A_bar[k][i] = np.round((A_bar[k][i] - np.sum(A_bar[i, :i]*A_bar[k, :i])) / A_bar[i][i], decimals=self.precision)
-                A_bar[i][k] = A_bar[k][i]
+                sum = np.sum(self.round_significant(A_bar[k, :i] * A_bar[i, :i]))
+                A_bar[k][i] = self.round_significant(self.round_significant(A_bar[k][i] - sum) / A_bar[i][i]) # below
+                A_bar[i][k] = A_bar[k][i] # above
+                L[k][i], U[i][k] = A_bar[k][i], A_bar[i][k]
+                self.steps.append((L.copy(), U.copy()))
                 
             # Compute diagonal elements
-            A_bar[k][k] = np.round(np.sqrt(A_bar[k][k] - np.sum(A_bar[k, :k]**2)), decimals=self.precision)
+            sum = np.sum(self.round_significant(A_bar[k, :k]**2))
+            A_bar[k][k] = self.round_significant(np.sqrt(self.round_significant(A_bar[k][k] - sum)))
+            U[k][k], L[k][k] = A_bar[k][k], A_bar[k][k]
+            self.steps.append((L.copy(), U.copy()))
             
             if np.isclose(A_bar[k][k], 0):  # Check for singularity
                 raise ValueError("Matrix is singular or near-singular")
@@ -158,4 +222,4 @@ class CholeskyLUDecomposition(DirectSolver):
             
         y = self.forward_substitution(np.tril(A_bar), b_bar)
         x = self.backward_substitution(np.triu(A_bar), y)
-        return np.round(x, decimals=self.precision)
+        return x
