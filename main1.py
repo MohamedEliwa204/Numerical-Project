@@ -50,13 +50,34 @@ class RootSolver(ABC):
         else:
             return abs(((x_new - x_old) / x_new) * 100)
 
+    def round_significant(self, value):
+        x = np.array(value, dtype=float)
+
+        if np.isscalar(x):
+            if not np.isfinite(x):
+                return x
+            if x == 0:
+                return 0
+            else:
+                digits = self.precision - int(np.floor(np.log10(abs(x)))) - 1
+                return round(x, digits)
+        else:
+            rounded_array = np.zeros_like(x)
+            for index, val in np.ndenumerate(x):
+                if not np.isfinite(val):
+                    rounded_array[index] = val
+                elif val == 0:
+                    rounded_array[index] = 0
+                else:
+                    digits = self.precision - int(np.floor(np.log10(abs(val)))) - 1
+                    rounded_array[index] = round(val, digits)
+            return rounded_array
+
     @abstractmethod
     def solve(self):
         pass
 
-    @abstractmethod
-    def draw(self):
-        pass
+
 
 
 class BracketingSolver(RootSolver):
@@ -91,10 +112,10 @@ class Bisection(BracketingSolver):
         for i in range(self.max_iter):
 
             try:
-                xr = (xl + xu) / 2
-                fxr = self.f(xr)
-                fxl = self.f(xl)
-                fxu = self.f(xu)
+                xr = self.round_significant((xl + xu) / 2)
+                fxr = self.round_significant(self.f(xr))
+                fxl = self.round_significant(self.f(xl))
+                fxu = self.round_significant(self.f(xu))
 
                 if i == 0:
                     error = 100.0
@@ -140,11 +161,11 @@ class Bisection(BracketingSolver):
             step_record = IterationStep(
                 step_number=i,
                 numericals={
-                    "xl": round(xl, self.precision),
-                    "xu": round(xu, self.precision),
-                    "xr": round(xr, self.precision),
-                    "f(xr)": round(fxr, self.precision),
-                    "error": round(error, self.precision)
+                    "xl": self.round_significant(xl),
+                    "xu": self.round_significant(xu),
+                    "xr": self.round_significant(xr),
+                    "f(xr)": self.round_significant(fxr),
+                    "error": error
                 },
                 description=desc,
                 plot_data=step_traces
@@ -186,10 +207,10 @@ class FalsePosition(BracketingSolver):
         for i in range(self.max_iter):
             try:
 
-                fxl = self.f(xl)
-                fxu = self.f(xu)
-                xr = ((xl * fxu) - (xu - fxl)) / (fxu - fxl)
-                fxr = self.f(xr)
+                fxl = self.round_significant(self.f(xl))
+                fxu = self.round_significant(self.f(xu))
+                xr = self.round_significant(((xl * fxu) - (xu - fxl)) / (fxu - fxl))
+                fxr = self.round_significant(self.f(xr))
 
                 if i == 0:
                     error = 100.0
@@ -243,11 +264,11 @@ class FalsePosition(BracketingSolver):
             step_record = IterationStep(
                 step_number=i,
                 numericals={
-                    "xl": round(xl, self.precision),
-                    "xu": round(xu, self.precision),
-                    "xr": round(xr, self.precision),
-                    "f(xr)": round(fxr, self.precision),
-                    "error": round(error, self.precision)
+                    "xl": self.round_significant(xl),
+                    "xu": self.round_significant(xu),
+                    "xr": self.round_significant(xr),
+                    "f(xr)": self.round_significant(fxr),
+                    "error": error
                 },
                 description=desc,
                 plot_data=step_traces
