@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 import numpy as np
 import math
 from abc import ABC, abstractmethod
@@ -6,6 +8,7 @@ from sympy import parse_expr
 from sympy.parsing.sympy_parser import standard_transformations, implicit_multiplication_application, convert_xor
 from typing_extensions import override
 import sympy as sp
+from IterationStep import IterationStep
 
 
 class RootSolver(ABC):
@@ -47,13 +50,34 @@ class RootSolver(ABC):
         else:
             return abs(((x_new - x_old) / x_new) * 100)
 
+    def round_significant(self, value):
+        x = np.array(value, dtype=float)
+
+        if np.isscalar(x):
+            if not np.isfinite(x):
+                return x
+            if x == 0:
+                return 0
+            else:
+                digits = self.precision - int(np.floor(np.log10(abs(x)))) - 1
+                return round(x, digits)
+        else:
+            rounded_array = np.zeros_like(x)
+            for index, val in np.ndenumerate(x):
+                if not np.isfinite(val):
+                    rounded_array[index] = val
+                elif val == 0:
+                    rounded_array[index] = 0
+                else:
+                    digits = self.precision - int(np.floor(np.log10(abs(val)))) - 1
+                    rounded_array[index] = round(val, digits)
+            return rounded_array
+
     @abstractmethod
     def solve(self):
         pass
 
-    @abstractmethod
-    def draw(self):
-        pass
+
 
 
 class BracketingSolver(RootSolver):
@@ -62,9 +86,8 @@ class BracketingSolver(RootSolver):
         self.xl = float(xl)
         self.xu = float(xu)
 
-    def check_bracket(self):
-        if self.f(self.xl) * self.f(self.xu) >= 0:
-            raise ValueError("Root not bracketed. f(xl) and f(xu) must have opposite signs.")
+    def check_bracket(self, xl, xu):
+        return self.f(xl) * self.f(xu) < 0
 
 
 class OpenSolver(RootSolver):
@@ -72,11 +95,204 @@ class OpenSolver(RootSolver):
 
 
 class Bisection(BracketingSolver):
-    pass
+    @override
+    def solve(self):
+        self.steps = []
+        if not self.check_bracket(self.xl, self.xu):
+            return {
+                "status": "error",
+                "root": None,
+                "steps": [],
+                "message": f"Initialization Failed: Root is not bracketed between {self.xl} and {self.xu}. f(xl)={self.f(self.xl):.4f}, f(xu)={self.f(self.xu):.4f}"
+            }
+        xl, xu = self.xl, self.xu
+        xr_old = xl
+        xr = xl
+
+        for i in range(self.max_iter):
+
+            try:
+                xr = self.round_significant((xl + xu) / 2)
+                fxr = self.round_significant(self.f(xr))
+                fxl = self.round_significant(self.f(xl))
+                fxu = self.round_significant(self.f(xu))
+
+                if i == 0:
+                    error = 100.0
+                else:
+                    error = self.calculate_error(xr, xr_old)
+            except Exception as e:
+                # Catch Math Errors (like Overflow/NaN) in the middle
+                return {
+                    "status": "error",
+                    "root": xr,
+                    "steps": [asdict(s) for s in self.steps],  # Return what we have so far
+                    "message": f"Math Error at iteration {i}: {str(e)}"
+                }
+
+            if fxl * fxu > 0:
+                return {
+                    "status": "error",
+                    "root": xr,
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": f"Bracket Lost at iteration {i}. Function may be discontinuous."
+                }
+
+            if fxl * fxr < 0:
+                desc = "Root in Left sub-interval, we replaced xu by xr."
+                next_xl, next_xu = xl, xr
+            elif fxl * fxr > 0:
+                desc = "Root in Right sub-interval, we replaced xl by xr."
+                next_xl, next_xu = xr, xu
+            else:
+                desc = "Exact root found."
+                error = 0.0
+                next_xl, next_xu = xr, xr
+
+            step_traces = [
+                {"x": [xl, xl], "y": [0, fxl], "type": "scatter", "mode": "lines",
+                 "line": {"color": "green", "dash": "dash"}, "name": "xl"},
+                {"x": [xu, xu], "y": [0, fxu], "type": "scatter", "mode": "lines",
+                 "line": {"color": "green", "dash": "dash"}, "name": "xu"},
+                {"x": [xr], "y": [fxr], "type": "scatter", "mode": "markers", "marker": {"color": "red", "size": 8},
+                 "name": "xr"}
+            ]
+
+            step_record = IterationStep(
+                step_number=i,
+                numericals={
+                    "xl": self.round_significant(xl),
+                    "xu": self.round_significant(xu),
+                    "xr": self.round_significant(xr),
+                    "f(xr)": self.round_significant(fxr),
+                    "error": error
+                },
+                description=desc,
+                plot_data=step_traces
+            )
+
+            self.steps.append(step_record)
+            if self.calculate_error(xr, xr_old) < self.tolerance:
+                return {
+                    "status": "success",
+                    "root": xr,
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": "Converged successfully."
+                }
+            xl, xu = next_xl, next_xu
+            xr_old = xr
+
+        return {
+            "status": "success",  # Or "warning"
+            "root": xr,
+            "steps": [asdict(s) for s in self.steps],
+            "message": f"Max iterations ({self.max_iter}) reached without full convergence."
+        }
 
 
 class FalsePosition(BracketingSolver):
-    pass
+    @override
+    def solve(self):
+        self.steps = []
+        if not self.check_bracket(self.xl, self.xu):
+            return {
+                "status": "error",
+                "root": None,
+                "steps": [],
+                "message": f"Initialization Failed: Root is not bracketed between {self.xl} and {self.xu}. f(xl)={self.f(self.xl):.4f}, f(xu)={self.f(self.xu):.4f}"
+            }
+        xl, xu = self.xl, self.xu
+        xr_old = xl
+        xr = xl
+        for i in range(self.max_iter):
+            try:
+
+                fxl = self.round_significant(self.f(xl))
+                fxu = self.round_significant(self.f(xu))
+                xr = self.round_significant(((xl * fxu) - (xu - fxl)) / (fxu - fxl))
+                fxr = self.round_significant(self.f(xr))
+
+                if i == 0:
+                    error = 100.0
+                else:
+                    error = self.calculate_error(xr, xr_old)
+            except Exception as e:
+
+                return {
+                    "status": "error",
+                    "root": xr,
+                    "steps": [asdict(s) for s in self.steps],  # Return what we have so far
+                    "message": f"Math Error at iteration {i}: {str(e)}"
+                }
+
+            if fxl * fxu > 0:
+                return {
+                    "status": "error",
+                    "root": xr,
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": f"Bracket Lost at iteration {i}. Function may be discontinuous."
+                }
+
+            if fxl * fxr < 0:
+                desc = "Root in Left sub-interval, we replaced xu by xr."
+                next_xl, next_xu = xl, xr
+            elif fxl * fxr > 0:
+                desc = "Root in Right sub-interval, we replaced xl by xr."
+                next_xl, next_xu = xr, xu
+            else:
+                desc = "Exact root found."
+                error = 0.0
+                next_xl, next_xu = xr, xr
+            step_traces = [
+                # Vertical Line at xl
+                {"x": [xl, xl], "y": [0, fxl], "type": "scatter", "mode": "lines",
+                 "line": {"color": "green", "dash": "dash"}, "name": "xl"},
+
+                # Vertical Line at xu
+                {"x": [xu, xu], "y": [0, fxu], "type": "scatter", "mode": "lines",
+                 "line": {"color": "green", "dash": "dash"}, "name": "xu"},
+
+                # *** THE SECANT LINE *** (Blue Solid Line)
+                # Connects point (xl, f(xl)) to (xu, f(xu))
+                {"x": [xl, xu], "y": [fxl, fxu], "type": "scatter", "mode": "lines",
+                 "line": {"color": "blue", "width": 2}, "name": "Secant Line"},
+
+                # The Root Guess (Red Dot)
+                {"x": [xr], "y": [fxr], "type": "scatter", "mode": "markers",
+                 "marker": {"color": "red", "size": 8}, "name": "xr"}
+            ]
+            step_record = IterationStep(
+                step_number=i,
+                numericals={
+                    "xl": self.round_significant(xl),
+                    "xu": self.round_significant(xu),
+                    "xr": self.round_significant(xr),
+                    "f(xr)": self.round_significant(fxr),
+                    "error": error
+                },
+                description=desc,
+                plot_data=step_traces
+            )
+            self.steps.append(step_record)
+            if error < self.tolerance:
+                return {
+                    "status": "success",
+                    "root": xr,
+
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": "Converged successfully."
+                }
+
+            xl, xu = next_xl, next_xu
+            xr_old = xr
+
+        return {
+            "status": "success",
+            "root": xr,
+            "steps": [asdict(s) for s in self.steps],
+            "message": f"Max iterations ({self.max_iter}) reached."
+        }
+
 
 
 class FixedPoint(OpenSolver):
