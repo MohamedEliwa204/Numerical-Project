@@ -14,7 +14,7 @@ export class MatrixInput implements OnInit {
   @Output() modeChange = new EventEmitter<'numerical' | 'symbolic'>();
 
   // precision = signal(5);
-  precision = new FormControl<number>(5, {nonNullable : true})
+  precision = new FormControl<number>(10, {nonNullable : true})
   nativeSize = new FormControl<number>(3, {nonNullable : true})
   constructor() {
     this.precision.valueChanges.subscribe(value => {

@@ -32,6 +32,19 @@
     padding: 1rem 0;
 }
 
+.section-header {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
 .nav-item {
     width: 100%;
     text-align: left;
