@@ -4,6 +4,7 @@ from typing import Dict, Any, List
 
 @dataclass
 class IterationStep:
+    step_number: int
     numericals: Dict[str, float]
 
     description: str
