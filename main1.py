@@ -57,7 +57,14 @@ class RootSolver(ABC):
 
 
 class BracketingSolver(RootSolver):
-    pass
+    def __init__(self, func_str, xl, xu, precision=5, max_iter=50, tolerance=1e-5):
+        super().__init__(func_str, precision, max_iter, tolerance)
+        self.xl = float(xl)
+        self.xu = float(xu)
+
+    def check_bracket(self):
+        if self.f(self.xl) * self.f(self.xu) >= 0:
+            raise ValueError("Root not bracketed. f(xl) and f(xu) must have opposite signs.")
 
 
 class OpenSolver(RootSolver):
