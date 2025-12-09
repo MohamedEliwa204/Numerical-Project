@@ -5,7 +5,15 @@
     </div>
 
     <nav class="nav-list">
-        @for (m of methods; track m) {
+        <div class="section-header">Linear Equations</div>
+        @for (m of linearMethods; track m) {
+        <button (click)="selectMethod.emit(m)" [class.active]="selectedMethod === m" class="nav-item">
+            <span class="nav-text">{{ m }}</span>
+        </button>
+        }
+
+        <div class="section-header mt-4">Root Finding</div>
+        @for (m of rootMethods; track m) {
         <button (click)="selectMethod.emit(m)" [class.active]="selectedMethod === m" class="nav-item">
             <span class="nav-text">{{ m }}</span>
         </button>

@@ -13,11 +13,20 @@ export class Sidebar {
   @Input({ required: true }) selectedMethod!: MethodType;
   @Output() selectMethod = new EventEmitter<MethodType>();
 
-  methods: MethodType[] = [
+  linearMethods: MethodType[] = [
     'Gauss Elimination',
     'Gauss-Jordan',
     'LU Decomposition',
     'Jacobi-Iteration',
     'Gauss-Seidel'
+  ];
+
+  rootMethods: MethodType[] = [
+    'Bisection',
+    'False-Position',
+    'Fixed Point',
+    'Original Newton-Raphson',
+    'Modified Newton-Raphson',
+    'Secant Method'
   ];
 }

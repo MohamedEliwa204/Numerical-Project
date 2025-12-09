@@ -12,6 +12,15 @@
     <!-- Workspace Grid -->
     <div class="workspace">
 
+      <!-- Show Root Finding Interface -->
+      @if (isRootFindingMethod()) {
+      <div class="center-panel w-full h-full">
+        <app-root-finder [method]="selectedMethod()"></app-root-finder>
+      </div>
+      }
+
+      <!-- Show Matrix Solver Interface -->
+      @else {
       <!-- Center: Matrix Input -->
       <div class="center-panel">
         <app-matrix-input [size]="numEquations()" (sizeChange)="numEquations.set($event)"
@@ -96,12 +105,12 @@
         }
       </div>
 
-      <!-- Right: Parameters -->
+      <!-- Right: Parameters (Only for Matrix methods) -->
       <div class="right-panel">
         <app-parameters [method]="selectedMethod()" [size]="numEquations()" (solve)="onSolve($event)">
         </app-parameters>
       </div>
-
+      }
     </div>
   </main>
 

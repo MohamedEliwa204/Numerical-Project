@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, computed, signal } from '@angular/core';
 import { Sidebar } from './sidebar/sidebar';
 import { MatrixInput } from './matrix-input/matrix-input';
 import { Parameters } from './parameters/parameters';
@@ -9,20 +8,26 @@ import { RequestData } from './models/request-data';
 import { SolverService } from './services/solver-service';
 import { StepsPanel } from './steps-panel/steps-panel';
 import { HttpErrorResponse } from '@angular/common/http';
+import { RootFinder } from './root-finder/root-finder';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, Sidebar, MatrixInput, Parameters, StepsPanel],
+  imports: [CommonModule, Sidebar, MatrixInput, Parameters, StepsPanel, RootFinder],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App {
+
+  constructor(
+    private api: SolverService
+  ) { }
+
   selectedMethod = signal<MethodType>('Gauss Elimination');
   numEquations = signal<number>(3);
 
   matrixA = signal<string[][]>([]);
   vectorB = signal<string[]>([]);
-  precision = signal<number>(5);
+  precision = signal<number>(10);
   mode = signal<'numerical' | 'symbolic'>('numerical');
 
   solution = signal<string[] | null>(null);
@@ -39,14 +44,19 @@ export class App {
   xsEquations = signal<string[]>([]);
   ysEquations = signal<string[]>([]);
 
+  // Check if current method is a Root Finding method
+  isRootFindingMethod = computed(() => {
+    const rootMethods = [
+      'Bisection', 'False-Position', 'Fixed Point', 
+      'Original Newton-Raphson', 'Modified Newton-Raphson', 'Secant Method'
+    ];
+    return rootMethods.includes(this.selectedMethod());
+  });
+
   isIterativeMethod = computed(() => {
     const m = this.selectedMethod();
     return m === 'Gauss-Seidel' || m === 'Jacobi-Iteration';
   });
-
-  constructor(
-    private api: SolverService
-  ) { }
 
   onMatrixDataChange(data: { A: string[][], B: string[], precision: number }) {
     this.matrixA.set(data.A);
@@ -240,8 +250,7 @@ export class App {
         });
         this.solution.set(result);
 
-        this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration')
-          ? response.num_of_ites ?? params.maxIterations : 0);
+        this.iterations.set((this.selectedMethod() === 'Gauss-Seidel' || this.selectedMethod() === 'Jacobi-Iteration') ? response.num_of_ites ?? params.maxIterations : 0);
         // mockSteps = response.steps;
         switch (this.selectedMethod()) {
           case 'Gauss Elimination':

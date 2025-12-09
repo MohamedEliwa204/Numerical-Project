@@ -1,0 +1,130 @@
+<div class="root-container">
+    <div class="header-section">
+        <h2 class="text-xl font-bold text-gray-800">{{ method }}</h2>
+        <div class="precision-group">
+             <label>Precision:</label>
+             <input type="number" [ngModel]="precision()" (ngModelChange)="precision.set($event)" class="small-input" min="1" max="15">
+        </div>
+    </div>
+
+    <!-- Equation Input -->
+    <div class="input-group">
+        <label>Equation f(x) = 0</label>
+        <div class="input-row">
+            <input type="text" [ngModel]="equation()" (ngModelChange)="equation.set($event)" 
+                   placeholder="e.g., x^2 - 4*x + 4" class="main-input flex-1">
+            <button (click)="onPlot()" class="btn-secondary">
+                Plot Function
+            </button>
+        </div>
+        <p class="hint">Use x as the variable. Supported: poly, exp, sin, cos.</p>
+    </div>
+
+    <!-- Plot Area -->
+    <div id="function-plot" class="plot-container"></div>
+
+    <!-- Method Parameters -->
+    <div class="params-grid">
+        <!-- Bracketing Parameters -->
+        @if (isBracketing) {
+            <div class="param-item">
+                <label>Lower Bound (X<sub>L</sub>)</label>
+                <input type="number" [ngModel]="xl()" (ngModelChange)="xl.set($event)" class="param-input">
+            </div>
+            <div class="param-item">
+                <label>Upper Bound (X<sub>U</sub>)</label>
+                <input type="number" [ngModel]="xu()" (ngModelChange)="xu.set($event)" class="param-input">
+            </div>
+        }
+
+        <!-- Open Method Parameters -->
+        @if (isOpenMethod) {
+            <div class="param-item">
+                <label>Initial Guess (X<sub>0</sub>)</label>
+                <input type="number" [ngModel]="x0()" (ngModelChange)="x0.set($event)" class="param-input">
+            </div>
+            @if (isSecant) {
+                <div class="param-item">
+                    <label>Second Guess (X<sub>1</sub>)</label>
+                    <input type="number" [ngModel]="x1()" (ngModelChange)="x1.set($event)" class="param-input">
+                </div>
+            }
+        }
+
+        <!-- General Parameters -->
+        <div class="param-item">
+            <label>Max Iterations</label>
+            <input type="number" [ngModel]="maxIterations()" (ngModelChange)="maxIterations.set($event)" class="param-input">
+        </div>
+        <div class="param-item">
+            <label>Epsilon</label>
+            <input type="number" [ngModel]="epsilon()" (ngModelChange)="epsilon.set($event)" step="0.000001" class="param-input">
+        </div>
+    </div>
+
+    <!-- Action -->
+    <div class="action-section">
+        <button (click)="onSolve()" class="btn-primary w-full" [disabled]="isLoading()">
+            {{ isLoading() ? 'Solving...' : 'Find Root' }}
+        </button>
+    </div>
+
+    <!-- Error Message -->
+    @if (errorMessage()) {
+        <div class="error-box">
+            <span>⚠️</span> {{ errorMessage() }}
+        </div>
+    }
+
+    <!-- Results -->
+    @if (result()) {
+        <div class="results-box animate-fade-in">
+            <h3 class="text-lg font-bold text-green-700 mb-2">Root Found!</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="result-item">
+                    <span class="label">Approximate Root:</span>
+                    <span class="value">{{ result().root }}</span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Iterations:</span>
+                    <span class="value">{{ result().iterations }}</span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Relative Error:</span>
+                    <span class="value">{{ result().relativeError }}%</span>
+                </div>
+                <div class="result-item">
+                    <span class="label">Execution Time:</span>
+                    <span class="value">{{ result().executionTime }}s</span>
+                </div>
+            </div>
+            
+            <!-- Steps Table -->
+            @if (result().steps && result().steps.length > 0) {
+                <div class="steps-table-container">
+                    <h4 class="p-4 font-bold text-gray-700 border-b border-gray-200 bg-gray-50">Iteration Steps</h4>
+                    <table class="steps-table">
+                        <thead>
+                            <tr>
+                                <th>Iter</th>
+                                <th>Xi / Xr</th>
+                                <th>f(X)</th>
+                                <th>Error %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (step of result().steps; track $index) {
+                                <tr>
+                                    <td>{{ step.iter }}</td>
+                                    <td>{{ step.x }}</td>
+                                    <td>{{ step.fx }}</td>
+                                    <td>{{ step.error }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+</div>

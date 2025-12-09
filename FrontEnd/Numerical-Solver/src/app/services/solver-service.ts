@@ -27,4 +27,19 @@ export class SolverService {
     // const url = this.apiUrl
     return this.http.post<ResponseData>(url, data, this.httpOptions)
   }
+
+  // New method for fetching function plots
+  getFunctionPlot(data: { function: string, method?: string }): Observable<any> {
+    console.log("Function to be sent to the backend: ");
+    console.log(data.function);
+    console.log("Method: " + data.method);
+    const url = this.apiUrl + "/plot" // Expecting this endpoint
+    return this.http.post<any>(url, data, this.httpOptions);
+  }
+
+  // New method for solving roots
+  solveRoot(data: any): Observable<any> {
+    const url = this.apiUrl + "/solve-root" // Expecting this endpoint
+    return this.http.post<any>(url, data, this.httpOptions);
+  }
 }

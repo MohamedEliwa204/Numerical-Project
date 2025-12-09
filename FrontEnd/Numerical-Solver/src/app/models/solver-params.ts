@@ -1,4 +1,4 @@
-type MethodType = 'Gauss Elimination' | 'Gauss-Jordan' | 'LU Decomposition' | 'Gauss-Seidel' | 'Jacobi-Iteration';
+type MethodType = 'Gauss Elimination' | 'Gauss-Jordan' | 'LU Decomposition' | 'Gauss-Seidel' | 'Jacobi-Iteration' | 'Bisection' | 'False-Position' | 'Fixed Point' | 'Original Newton-Raphson' | 'Modified Newton-Raphson' | 'Secant Method';
 type LUForm = 'Doolittle' | 'Crout' | 'Cholesky';
 type StopCondition = 'Number of Iterations' | 'Absolute Relative Error';
 
