@@ -257,7 +257,7 @@ class FalsePosition(BracketingSolver):
                 return {
                     "status": "success",
                     "root": xr,
-                    # Convert objects to dicts for JSON
+
                     "steps": [asdict(s) for s in self.steps],
                     "message": "Converged successfully."
                 }
