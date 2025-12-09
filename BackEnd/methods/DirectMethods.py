@@ -44,53 +44,62 @@ class DoolittleLUDecomposition(DirectSolver):
 
         n = A_bar.shape[0]
         L = np.zeros((n, n))
-        for d in range(n):
-            L[d][d] = 1
-        
-        # compute scaling if needed and raise error for singularity
-        self.scaling(A_bar) if self.withScaling else None
+        np.fill_diagonal(L, 1)
 
-        for k in range(0, n - 1):  # row traverse(find the row to pivot) and pivoting
-            old_row = k
+        # Compute scaling if needed and raise error for singularity
+        if self.withScaling:
+            self.scaling(A_bar)
+
+        for k in range(0, n - 1):
+            # Find pivot row using partial pivoting
             max_index = k
-            if self.withScaling is False:
-                for i in range(k, n):
-                    if abs(A_bar[i][k]) > abs(A_bar[max_index][k]):
-                        max_index = i
-            else:
-                big = abs(A_bar[k][k]) / self.scalar[k]
+
+            if self.withScaling:
+                # Pivoting with scaling
+                big = self.round_significant(abs(A_bar[k][k]) / self.scalar[k])
                 for i in range(k + 1, n):
-                    dummy = abs(A_bar[i][k]) / self.scalar[i]
+                    dummy = self.round_significant(abs(A_bar[i][k]) / self.scalar[i])
                     if dummy > big:
                         big = dummy
                         max_index = i
+            else:
+                # Pivoting without scaling
+                max_val = self.round_significant(abs(A_bar[k][k]))
+                for i in range(k, n):
+                    current_val = self.round_significant(abs(A_bar[i][k]))
+                    if current_val > max_val:
+                        max_val = current_val
+                        max_index = i
 
+            # Perform row swapping if needed
             if max_index != k:
                 A_bar[[k, max_index]] = A_bar[[max_index, k]]
                 b_bar[[k, max_index]] = b_bar[[max_index, k]]
-                if self.scalar is not None:
+                if self.withScaling:
                     self.scalar[[k, max_index]] = self.scalar[[max_index, k]]
                 if k > 0:
-                    L[[k, max_index], :k] = L[[max_index, k], :k] # swap factors in L too
+                    L[[k, max_index], :k] = L[[max_index, k], :k]
 
-            if self.isSingular(A_bar[k][k], k):  # Check for singularity (pivot is zero)
+            # Check for singularity
+            if self.isSingular(A_bar[k][k], k):
                 raise ValueError("Matrix is singular or near-singular.")
             
-            for i in range(k + 1, n):  # row traverse(apply the elimination for specific row)
+            # Perform elimination
+            for i in range(k + 1, n):
                 factor = self.round_significant(A_bar[i][k] / A_bar[k][k])
-                L[i][k] = factor  # to store factors
+                L[i][k] = factor
                 tempRow = self.round_significant(factor * A_bar[k, k:])
                 A_bar[i, k:] = self.round_significant(A_bar[i, k:] - tempRow)
                 self.steps.append((L.copy(), A_bar.copy()))
                 
-        if self.isSingular(A_bar[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
+        # Check last pivot for singularity
+        if self.isSingular(A_bar[n-1][n-1], n-1):
             raise ValueError("Matrix is singular or near-singular.")
         
-        np.fill_diagonal(L, 1)
         U = A_bar
 
-        y = self.forward_substitution(L, b_bar)  # result of the system Ly = b
-        solution = self.backward_substitution(U, y)  # result of Ux = y
+        y = self.forward_substitution(L, b_bar)
+        solution = self.backward_substitution(U, y)
         return solution
 
 
@@ -109,21 +118,41 @@ class CroutLUDecomposition(DirectSolver):
         o = np.arange(n)   # To track the order of solution
         np.fill_diagonal(L, 1)
 
-        for k in range(0, n - 1):  # we need custom pivoting method so we don't touch b matrix
+        # Compute scaling if needed
+        if self.withScaling:
+            self.scaling(A_bar)
+
+        for k in range(0, n - 1):
+            # Find pivot row with optional scaling
             max_index = k
-            for i in range(k, n):
-                if abs(A_bar[i][k]) > abs(A_bar[max_index][k]):
-                    max_index = i
+
+            if self.withScaling:
+                # Pivoting with scaling
+                big = self.round_significant(abs(A_bar[k][k]) / self.scalar[k])
+                for i in range(k + 1, n):
+                    dummy = self.round_significant(abs(A_bar[i][k]) / self.scalar[i])
+                    if dummy > big:
+                        big = dummy
+                        max_index = i
+            else:
+                # Pivoting without scaling
+                for i in range(k, n):
+                    if abs(A_bar[i][k]) > abs(A_bar[max_index][k]):
+                        max_index = i
+
             if max_index != k:
                 # Swap rows in A_bar (equivalent to swapping cols in A)
                 A_bar[[k, max_index]] = A_bar[[max_index, k]]
                 # Swap the order tracker (to keep order of the right solutions)
                 o[[k, max_index]] = o[[max_index, k]]
+                # Swap scaling factors if using scaling
+                if self.withScaling:
+                    self.scalar[[k, max_index]] = self.scalar[[max_index, k]]
                 # swap rows in L (factors)
                 if k > 0:
                     L[[k, max_index], :k] = L[[max_index, k], :k]
 
-            if np.isclose(A_bar[k][k], 0):  # Check for singularity (pivot is zero)
+            if self.isSingular(A_bar[k][k], k):  # Check for singularity
                 raise ValueError("Matrix is singular or near-singular.")
             for i in range(k + 1, n):  # row traverse (apply the elimination for specific row)
                 factor = self.round_significant(A_bar[i][k] / A_bar[k][k])
@@ -136,7 +165,7 @@ class CroutLUDecomposition(DirectSolver):
                 np.fill_diagonal(L_step, 1)
                 self.steps.append((A_bar.copy().T, L_step.T))
                 
-        if np.isclose(A_bar[n-1][n-1], 0):  # Check for singularity (last pivot after elimination is zero)
+        if self.isSingular(A_bar[n-1][n-1], n-1):  # Check for singularity (last pivot after elimination is zero)
             raise ValueError("Matrix is singular or near-singular.")
 
         # For Crout: L has the factors, U has 1s on diagonal

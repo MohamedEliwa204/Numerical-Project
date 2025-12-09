@@ -81,7 +81,7 @@ class NumericalSolverFactory(AbstractSolverFactory):
         return JacobiIteration(A, b, precision=precision, initial_guess=initial_guess,
                               num_of_ites=num_of_ites, abs_rel_error=abs_rel_error)
 
-    def create_solver(self, method_name, A, b, **kwargs):
+    def create_solver(self, method_name, *args, **kwargs):
         method_name = method_name.lower().replace(' ', '_')
 
         method_map = {
@@ -95,7 +95,7 @@ class NumericalSolverFactory(AbstractSolverFactory):
         }
 
         if method_name in method_map:
-            return method_map[method_name](A, b, **kwargs)
+            return method_map[method_name](*args, **kwargs)
         else:
             raise ValueError(f"Unknown method '{method_name}'. Available methods: {', '.join(method_map.keys())}")
 
@@ -108,28 +108,28 @@ class NumericalSolverFactory(AbstractSolverFactory):
 
 class SymbolicSolverFactory(AbstractSolverFactory):
 
-    def create_gauss_elimination(self, n, A, b):
+    def create_gauss_elimination(self, n, A, b, **kwargs):
         return SymGaussElimination(n, A, b)
 
-    def create_gauss_jordan(self, n, A, b):
+    def create_gauss_jordan(self, n, A, b, **kwargs):
         return SymGaussJordan(n, A, b)
 
-    def create_doolittle_lu(self, n, A, b):
+    def create_doolittle_lu(self, n, A, b, **kwargs):
         return SymDoolittleLUDecomposition(n, A, b)
 
-    def create_crout_lu(self, n, A, b):
+    def create_crout_lu(self, n, A, b, **kwargs):
         return SymCroutLUDecomposition(n, A, b)
 
-    def create_cholesky(self, n, A, b):
+    def create_cholesky(self, n, A, b, **kwargs):
         return SymCholeskyLUDecomposition(n, A, b)
 
-    def create_gauss_seidel(self, n, A, b):
+    def create_gauss_seidel(self, n, A, b, **kwargs):
         raise NotImplementedError("Symbolic iterative methods not yet implemented")
 
-    def create_jacobi(self, n, A, b):
+    def create_jacobi(self, n, A, b, **kwargs):
         raise NotImplementedError("Symbolic iterative methods not yet implemented")
 
-    def create_solver(self, method_name, n, A, b):
+    def create_solver(self, method_name, *args, **kwargs):
         method_name = method_name.lower().replace(' ', '_')
 
         method_map = {
@@ -143,7 +143,7 @@ class SymbolicSolverFactory(AbstractSolverFactory):
         }
 
         if method_name in method_map:
-            return method_map[method_name](n, A, b)
+            return method_map[method_name](*args, **kwargs)
         else:
             raise ValueError(f"Unknown method '{method_name}'. Available methods: {', '.join(method_map.keys())}")
 

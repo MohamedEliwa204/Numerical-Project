@@ -1,3 +1,6 @@
 numpy
 sympy
+flask
+flask-cors
+typing_extensions
 
