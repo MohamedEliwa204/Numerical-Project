@@ -49,6 +49,15 @@ class RootSolver(ABC):
             return 0
         else:
             return abs(((x_new - x_old) / x_new) * 100)
+        
+    def number_of_significant_figures(self, error):
+        if error > 5:
+            m = 0
+        elif error == 0: # Exact root found
+            m = self.precision
+        else:
+            m = math.floor(2 - math.log10(2*error))
+        return m
 
     def round_significant(self, value):
         x = np.array(value, dtype=float)
@@ -124,6 +133,8 @@ class Bisection(BracketingSolver):
                     error = 100.0
                 else:
                     error = self.calculate_error(xr, xr_old)
+                    
+                correctSFs = self.number_of_significant_figures(error)
             except Exception as e:
                 # Catch Math Errors (like Overflow/NaN) in the middle
                 return {
@@ -168,7 +179,8 @@ class Bisection(BracketingSolver):
                     "xu": self.round_significant(xu),
                     "xr": self.round_significant(xr),
                     "f(xr)": self.round_significant(fxr),
-                    "error": error
+                    "error": error,
+                    "correctSFs": correctSFs
                 },
                 description=desc,
                 plot_data=step_traces
@@ -219,6 +231,8 @@ class FalsePosition(BracketingSolver):
                     error = 100.0
                 else:
                     error = self.calculate_error(xr, xr_old)
+                    
+                correctSFs = self.number_of_significant_figures(error)
             except Exception as e:
 
                 return {
@@ -271,7 +285,8 @@ class FalsePosition(BracketingSolver):
                     "xu": self.round_significant(xu),
                     "xr": self.round_significant(xr),
                     "f(xr)": self.round_significant(fxr),
-                    "error": error
+                    "error": error,
+                    "correctSFs": correctSFs
                 },
                 description=desc,
                 plot_data=step_traces
