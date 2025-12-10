@@ -49,6 +49,15 @@ class RootSolver(ABC):
             return 0
         else:
             return abs(((x_new - x_old) / x_new) * 100)
+        
+    def number_of_significant_figures(self, error):
+        if error > 5:
+            m = 0
+        elif error == 0: # Exact root found
+            m = self.precision
+        else:
+            m = max(math.floor(2 - math.log10(2*error)), 0)
+        return m
 
     def round_significant(self, value):
         x = np.array(value, dtype=float)

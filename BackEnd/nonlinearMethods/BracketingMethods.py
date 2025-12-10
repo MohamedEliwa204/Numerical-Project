@@ -38,6 +38,8 @@ class Bisection(BracketingSolver):
                     error = 100.0
                 else:
                     error = self.calculate_error(xr, xr_old)
+                    
+                correctSFs = self.number_of_significant_figures(error)
             except Exception as e:
                 # Catch Math Errors (like Overflow/NaN) in the middle
                 return {
@@ -82,7 +84,8 @@ class Bisection(BracketingSolver):
                     "xu": self.round_significant(xu),
                     "xr": self.round_significant(xr),
                     "f(xr)": self.round_significant(fxr),
-                    "error": error
+                    "error": error,
+                    "correctSFs": correctSFs
                 },
                 description=desc,
                 plot_data=step_traces
@@ -133,6 +136,8 @@ class FalsePosition(BracketingSolver):
                     error = 100.0
                 else:
                     error = self.calculate_error(xr, xr_old)
+                    
+                correctSFs = self.number_of_significant_figures(error)
             except Exception as e:
 
                 return {
@@ -185,7 +190,8 @@ class FalsePosition(BracketingSolver):
                     "xu": self.round_significant(xu),
                     "xr": self.round_significant(xr),
                     "f(xr)": self.round_significant(fxr),
-                    "error": error
+                    "error": error,
+                    "correctSFs": correctSFs
                 },
                 description=desc,
                 plot_data=step_traces

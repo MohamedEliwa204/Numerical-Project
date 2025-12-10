@@ -49,6 +49,8 @@ class SecantMethod(OpenSolver):
                     error = 100.0
                 else:
                     error = self.calculate_error(x_new, x_cur)
+                    
+                correctSFs = self.number_of_significant_figures(error)
 
             except Exception as e:
                 return {
@@ -80,7 +82,8 @@ class SecantMethod(OpenSolver):
                     "x1": x_cur,
                     "x_new": x_new,
                     "f(x_new)": f_xnew,
-                    "error": error
+                    "error": error,
+                    "correctSFs": correctSFs
                 },
                 description=f"Iteration {i}",
                 plot_data=step_traces
