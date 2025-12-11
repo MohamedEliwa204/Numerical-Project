@@ -314,7 +314,112 @@ class FalsePosition(BracketingSolver):
 
 
 class FixedPoint(OpenSolver):
-    pass
+    def solve(self):
+        self.steps = []
+        xr_old = self.x0
+        current_iteration = 0
+        try:
+            xr = self.round_significant(self.f(xr_old))
+        except Exception as e:
+            return {
+                "status": "error",
+                "root": None,
+                "steps": [],
+                "message": f"Math Error at initial evaluation: {str(e)}"
+            }
+
+        try:
+            ea=self.calculate_error(xr, xr_old)
+        except Exception:
+            ea=100.0
+        #for first itteration
+        step_traces = [
+            # vertical line from (xr_old, xr_old) to (xr_old, g(xr_old))
+            {"x": [xr_old, xr_old],
+             "y": [xr_old, xr],
+             "type": "scatter",
+             "mode": "lines",
+             "line": {"color": "red", "width": 2},
+             "name": f"Iteration {current_iteration} vertical"},
+            # horizontal line from (xr_old, g(xr_old)) to (g(xr_old), g(xr_old))
+            {"x": [xr_old, xr],
+             "y": [xr, xr],
+             "type": "scatter",
+             "mode": "lines",
+             "line": {"color": "red", "width": 2},
+             "name": f"Iteration {current_iteration} horizontal"}
+        ]
+        step_record = IterationStep(
+            step_number=current_iteration,
+            numericals={
+                "xr_old": xr_old,
+                "xr_new": xr,
+                "g(xr_old)": xr,
+                "error": ea
+            },
+            description=f"Iteration {current_iteration}: xr_old={xr_old}, xr_new={xr}",
+            plot_data=step_traces
+        )
+
+        self.steps.append(step_record)
+        current_iteration += 1
+        while ea > self.tolerance and current_iteration < self.max_iter:
+            xr_old = xr
+            try:
+                xr_new = self.round_significant(self.f(xr_old))
+                ea = self.calculate_error(xr_new, xr_old) if xr_new != 0 else 100.0
+
+                # Build iteration plot traces (staircase)
+                step_traces = [
+                    {"x": [xr_old, xr_old],
+                     "y": [xr_old, xr_new],
+                     "type": "scatter",
+                     "mode": "lines",
+                     "line": {"color": "red", "width": 2},
+                     "name": f"Iteration {current_iteration} vertical"},
+                    {"x": [xr_old, xr_new],
+                     "y": [xr_new, xr_new],
+                     "type": "scatter",
+                     "mode": "lines",
+                     "line": {"color": "red", "width": 2},
+                     "name": f"Iteration {current_iteration} horizontal"}
+                ]
+
+                step_record = IterationStep(
+                    step_number=current_iteration,
+                    numericals={
+                        "xr_old": xr_old,
+                        "xr_new": xr_new,
+                        "g(xr_old)": xr_new,
+                        "error": ea
+                    },
+                    description=f"Iteration {current_iteration}: xr_old={xr_old}, xr_new={xr_new}",
+                    plot_data=step_traces
+                )
+
+                self.steps.append(step_record)
+                current_iteration += 1
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "root": xr_old,
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": f"Math Error at iteration {current_iteration}: {str(e)}"
+                }
+
+            status = "success" if ea <= self.tolerance else "failure"
+            message = "Converged successfully." if ea <= self.tolerance else f"Max iterations ({self.max_iter}) reached."
+
+        return {
+            "status": status,
+            "root": xr,
+            "steps": [asdict(s) for s in self.steps],
+            "message": message
+        }
+
+
+
+
 
 
 class OriginalNewtonRaphson(OpenSolver):
