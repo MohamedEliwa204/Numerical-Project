@@ -418,11 +418,6 @@ class FixedPoint(OpenSolver):
             "message": message
         }
 
-
-
-
-
-
 class OriginalNewtonRaphson(OpenSolver):
     @override
     def solve(self):
