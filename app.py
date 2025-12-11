@@ -10,7 +10,7 @@ import numpy as np
 import time
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:4200"}}, supports_credentials=True)
 
 @app.route('/solve', methods=['POST'])
 def solve_system():
@@ -98,7 +98,7 @@ def solve_system():
             'message' : getattr(solver, 'message', "")
         })
         
-@app.route('/solve_nonlinear', methods=['POST'])
+@app.route('/solve-root', methods=['POST'])
 def solve_nonlinear():
     if request.method == 'POST':
         try:
@@ -216,4 +216,4 @@ def to_serializable(val):
     return str(val)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+     app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False)

@@ -1,124 +1,173 @@
 <div class="root-container">
-    <div class="header-section">
-        <h2 class="text-xl font-bold text-gray-800">{{ method }}</h2>
-        <div class="precision-group">
-             <label>Precision:</label>
-             <input type="number" [ngModel]="precision()" (ngModelChange)="precision.set($event)" class="small-input" min="1" max="15">
+    <!-- Top Section: Header + Equation Input -->
+    <div class="top-section">
+        <div class="header-row">
+            <h2 class="method-title">{{ method }}</h2>
+            <div class="precision-group">
+                <label>Precision:</label>
+                <input type="number" [ngModel]="precision()" (ngModelChange)="precision.set($event)" 
+                       class="small-input" min="1" max="15">
+            </div>
         </div>
-    </div>
 
-    <!-- Equation Input -->
-    <div class="input-group">
-        <label>Equation f(x) = 0</label>
-        <div class="input-row">
-            <input type="text" [ngModel]="equation()" (ngModelChange)="equation.set($event)" 
-                   placeholder="e.g., x^2 - 4*x + 4" class="main-input flex-1">
-            <button (click)="onPlot()" class="btn-secondary">
-                Plot Function
+        <div class="equation-row">
+            <div class="equation-input-wrapper">
+                <label>f(x) = 0</label>
+                <input type="text" [ngModel]="equation()" (ngModelChange)="equation.set($event)" 
+                       placeholder="e.g., x^2 - 4*x + 4" class="equation-input">
+            </div>
+            <button (click)="onPlot()" class="btn-plot">📈 Plot</button>
+            <button (click)="onSolve()" class="btn-solve" [disabled]="isLoading()">
+                {{ isLoading() ? '⏳' : '🔍' }} {{ isLoading() ? 'Solving...' : 'Find Root' }}
             </button>
         </div>
-        <p class="hint">Use x as the variable. Supported: poly, exp, sin, cos.</p>
-    </div>
-
-    <!-- Plot Area -->
-    <div id="function-plot" class="plot-container"></div>
-
-    <!-- Method Parameters -->
-    <div class="params-grid">
-        <!-- Bracketing Parameters -->
-        @if (isBracketing) {
-            <div class="param-item">
-                <label>Lower Bound (X<sub>L</sub>)</label>
-                <input type="number" [ngModel]="xl()" (ngModelChange)="xl.set($event)" class="param-input">
-            </div>
-            <div class="param-item">
-                <label>Upper Bound (X<sub>U</sub>)</label>
-                <input type="number" [ngModel]="xu()" (ngModelChange)="xu.set($event)" class="param-input">
-            </div>
-        }
-
-        <!-- Open Method Parameters -->
-        @if (isOpenMethod) {
-            <div class="param-item">
-                <label>Initial Guess (X<sub>0</sub>)</label>
-                <input type="number" [ngModel]="x0()" (ngModelChange)="x0.set($event)" class="param-input">
-            </div>
-            @if (isSecant) {
-                <div class="param-item">
-                    <label>Second Guess (X<sub>1</sub>)</label>
-                    <input type="number" [ngModel]="x1()" (ngModelChange)="x1.set($event)" class="param-input">
-                </div>
-            }
-        }
-
-        <!-- General Parameters -->
-        <div class="param-item">
-            <label>Max Iterations</label>
-            <input type="number" [ngModel]="maxIterations()" (ngModelChange)="maxIterations.set($event)" class="param-input">
-        </div>
-        <div class="param-item">
-            <label>Epsilon</label>
-            <input type="number" [ngModel]="epsilon()" (ngModelChange)="epsilon.set($event)" step="0.000001" class="param-input">
-        </div>
-    </div>
-
-    <!-- Action -->
-    <div class="action-section">
-        <button (click)="onSolve()" class="btn-primary w-full" [disabled]="isLoading()">
-            {{ isLoading() ? 'Solving...' : 'Find Root' }}
-        </button>
     </div>
 
     <!-- Error Message -->
     @if (errorMessage()) {
-        <div class="error-box">
+        <div class="error-banner">
             <span>⚠️</span> {{ errorMessage() }}
+            <button (click)="errorMessage.set('')" class="error-close">×</button>
         </div>
     }
 
-    <!-- Results -->
-    @if (result()) {
-        <div class="results-box animate-fade-in">
-            <h3 class="text-lg font-bold text-green-700 mb-2">Root Found!</h3>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="result-item">
-                    <span class="label">Approximate Root:</span>
-                    <span class="value">{{ result().root }}</span>
+    <!-- Main Content: Plot + Controls Side by Side -->
+    <div class="main-content">
+        <!-- Left: Plot Area -->
+        <div class="plot-section">
+            <div id="function-plot" class="plot-area"></div>
+            
+            <!-- Step Navigation (below plot) -->
+            @if (result() && result().steps && result().steps.length > 0) {
+                <div class="step-nav-bar">
+                    <button (click)="prevStep()" [disabled]="currentStepIndex() === 0" class="nav-btn">
+                        ◀ Prev
+                    </button>
+                    <div class="step-progress">
+                        <span class="step-label">Step {{ currentStepIndex() + 1 }} / {{ result().steps.length }}</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" 
+                                 [style.width.%]="((currentStepIndex() + 1) / result().steps.length) * 100"></div>
+                        </div>
+                    </div>
+                    <button (click)="nextStep()" [disabled]="currentStepIndex() >= result().steps.length - 1" class="nav-btn">
+                        Next ▶
+                    </button>
                 </div>
-                <div class="result-item">
-                    <span class="label">Iterations:</span>
-                    <span class="value">{{ result().iterations }}</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">Relative Error:</span>
-                    <span class="value">{{ result().relativeError }}%</span>
-                </div>
-                <div class="result-item">
-                    <span class="label">Execution Time:</span>
-                    <span class="value">{{ result().executionTime }}s</span>
+            }
+        </div>
+
+        <!-- Right: Parameters + Step Details -->
+        <div class="controls-section">
+            <!-- Parameters Panel -->
+            <div class="params-panel">
+                <h3 class="panel-title">Parameters</h3>
+                <div class="params-grid">
+                    @if (isBracketing) {
+                        <div class="param-field">
+                            <label>X<sub>L</sub> (Lower)</label>
+                            <input type="number" [ngModel]="xl()" (ngModelChange)="xl.set($event)">
+                        </div>
+                        <div class="param-field">
+                            <label>X<sub>U</sub> (Upper)</label>
+                            <input type="number" [ngModel]="xu()" (ngModelChange)="xu.set($event)">
+                        </div>
+                    }
+                    @if (isOpenMethod) {
+                        <div class="param-field">
+                            <label>X<sub>0</sub> (Initial)</label>
+                            <input type="number" [ngModel]="x0()" (ngModelChange)="x0.set($event)">
+                        </div>
+                        @if (isSecant) {
+                            <div class="param-field">
+                                <label>X<sub>1</sub> (Second)</label>
+                                <input type="number" [ngModel]="x1()" (ngModelChange)="x1.set($event)">
+                            </div>
+                        }
+                    }
+                    <div class="param-field">
+                        <label>Max Iterations</label>
+                        <input type="number" [ngModel]="maxIterations()" (ngModelChange)="maxIterations.set($event)">
+                    </div>
+                    <div class="param-field">
+                        <label>Epsilon (ε)</label>
+                        <input type="number" [ngModel]="epsilon()" (ngModelChange)="epsilon.set($event)" step="0.000001">
+                    </div>
                 </div>
             </div>
-            
-            <!-- Steps Table -->
-            @if (result().steps && result().steps.length > 0) {
-                <div class="steps-table-container">
-                    <h4 class="p-4 font-bold text-gray-700 border-b border-gray-200 bg-gray-50">Iteration Steps</h4>
+
+            <!-- Result Panel (shows when we have results) -->
+            @if (result()) {
+                <div class="result-panel" [class.success]="result().status === 'success'" 
+                     [class.error]="result().status === 'error'">
+                    <div class="result-header">
+                        <span class="result-icon">{{ result().status === 'success' ? '✓' : '⚠' }}</span>
+                        <span class="result-title">{{ result().status === 'success' ? 'Root Found' : 'Error' }}</span>
+                    </div>
+                    <div class="result-value">
+                        <span class="root-label">Root ≈</span>
+                        <span class="root-number">{{ result().root }}</span>
+                    </div>
+                    <div class="result-meta">
+                        <span>Time: {{ result().executionTime | number:'1.4-4' }}s</span>
+                        <span>Steps: {{ result().steps?.length || 0 }}</span>
+                    </div>
+                    @if (result().message) {
+                        <div class="result-message">{{ result().message }}</div>
+                    }
+                </div>
+
+                <!-- Current Step Details -->
+                @if (currentStep) {
+                    <div class="step-detail-panel">
+                        <h3 class="panel-title">
+                            <span>Iteration {{ currentStep.step_number + 1 }}</span>
+                        </h3>
+                        <div class="step-description">{{ currentStep.description }}</div>
+                        <div class="numericals-grid">
+                            @for (item of currentStep.numericals | keyvalue; track item.key) {
+                                <div class="numerical-card">
+                                    <span class="num-label">{{ item.key }}</span>
+                                    <span class="num-value">{{ item.value }}</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Bottom: Compact Steps Table (collapsible) -->
+    @if (result() && result().steps && result().steps.length > 0) {
+        <div class="steps-table-section">
+            <button (click)="toggleStepsTable()" class="toggle-table-btn">
+                {{ showStepsTable() ? '▼ Hide' : '▶ Show' }} All Steps ({{ result().steps.length }})
+            </button>
+            @if (showStepsTable()) {
+                <div class="steps-table-wrapper">
                     <table class="steps-table">
                         <thead>
                             <tr>
-                                <th>Iter</th>
-                                <th>Xi / Xr</th>
-                                <th>f(X)</th>
+                                <th>#</th>
+                                <th>x<sub>l</sub></th>
+                                <th>x<sub>u</sub></th>
+                                <th>x<sub>r</sub></th>
+                                <th>f(x<sub>r</sub>)</th>
                                 <th>Error %</th>
+                                <th>SFs</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @for (step of result().steps; track $index) {
-                                <tr>
-                                    <td>{{ step.iter }}</td>
-                                    <td>{{ step.x }}</td>
-                                    <td>{{ step.fx }}</td>
-                                    <td>{{ step.error }}</td>
+                            @for (step of result().steps; track step.step_number; let idx = $index) {
+                                <tr [class.active]="idx === currentStepIndex()" (click)="goToStep(idx)">
+                                    <td>{{ step.step_number + 1 }}</td>
+                                    <td>{{ step.numericals['xl'] }}</td>
+                                    <td>{{ step.numericals['xu'] }}</td>
+                                    <td>{{ step.numericals['xr'] }}</td>
+                                    <td>{{ step.numericals['f(xr)'] }}</td>
+                                    <td>{{ step.numericals['error'] | number:'1.2-4' }}%</td>
+                                    <td>{{ step.numericals['correctSFs'] }}</td>
                                 </tr>
                             }
                         </tbody>
