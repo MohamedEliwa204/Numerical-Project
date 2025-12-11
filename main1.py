@@ -318,11 +318,216 @@ class FixedPoint(OpenSolver):
 
 
 class OriginalNewtonRaphson(OpenSolver):
-    pass
+    @override
+    def solve(self):
+        self.steps = []
+
+        # Differentiate the expression
+        derivative_expr = sp.diff(self.expr, self.variable)
+
+        # Convert derivative to a numpy function
+        first_derivative_calc = sp.lambdify(self.variable, derivative_expr, "numpy")
+
+        def f_deriv(value):
+            try:
+                return first_derivative_calc(value)
+            except Exception as e:
+                raise ValueError(f"Math Error in derivative at {value}: {e}")
+
+        x_current = self.x0
+        x_old = x_current # Initialized just to calculate the first error
+        x_new = x_current
+
+        for i in range(self.max_iter):
+            try:
+
+                fx = self.round_significant(self.f(x_current))
+                fdx = self.round_significant(f_deriv(x_current))
+
+                if fdx == 0:
+                    return {
+                        "status": "error",
+                        "root": x_current,
+                        "steps": [asdict(s) for s in self.steps],
+                        "message": f"Derivative is zero at x={x_current}. Cannot divide by zero."
+                    }
+
+                x_new = self.round_significant(x_current - (fx / fdx))
+
+                if i == 0:
+                    error = 100.0
+                else:
+                    error = self.calculate_error(x_new, x_current)
+
+                correctSFs = self.number_of_significant_figures(error)
+
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "root": x_new,
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": f"Math Error at iteration {i}: {str(e)}"
+                }
+
+            # Line Visualizing
+            step_traces = [
+                # The Curve point
+                {"x": [x_current], "y": [fx], "type": "scatter", "mode": "markers",
+                 "marker": {"color": "red", "size": 8}, "name": "Current Point"},
+
+                # The Tangent Line
+                {"x": [x_current, x_new], "y": [fx, 0], "type": "scatter", "mode": "lines",
+                 "line": {"color": "green", "dash": "dash", "width": 2}, "name": "Tangent Line"},
+
+                # The New Root Estimate
+                {"x": [x_new], "y": [0], "type": "scatter", "mode": "markers",
+                 "marker": {"color": "blue", "size": 8}, "name": "New Estimate"}
+            ]
+
+            step_record = IterationStep(
+                step_number = i,
+                numericals = {
+                    "x_old": x_old,
+                    "x_current": x_current,
+                    "f(x_current)": fx,
+                    "f'(x_current)": fdx,
+                    "x_new": x_new,
+                    "error": error,
+                    "correctSFs": correctSFs
+                },
+                description=f"Tangent at {x_current} intersects axis at {x_new}",
+                plot_data=step_traces
+            )
+
+            self.steps.append(step_record)
+
+            # Check Convergence
+            if error < self.tolerance:
+                return {
+                    "status": "success",
+                    "root": x_new,
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": "Converged successfully."
+                }
+
+            # Update
+            x_old = x_current
+            x_current = x_new
+
+        return {
+            "status": "failure",
+            "root": x_new,
+            "steps": [asdict(s) for s in self.steps],
+            "message": f"Max iterations ({self.max_iter}) reached."
+        }
 
 
 class ModifiedNewtonRaphson(OpenSolver):
-    pass
+    @override
+    def solve(self):
+        self.steps = []
+
+        derivative_expr = sp.diff(self.expr, self.variable)
+        second_derivative_expr = sp.diff(derivative_expr, self.variable)
+
+        first_derivative_calc = sp.lambdify(self.variable, derivative_expr, "numpy")
+        second_derivative_calc = sp.lambdify(self.variable, second_derivative_expr, "numpy")
+
+        def f_prime(value):
+            try:
+                return first_derivative_calc(value)
+            except Exception as e:
+                raise ValueError(f"Math Error in first derivative at {value}: {e}")
+
+        def f_double_prime(value):
+            try:
+                return second_derivative_calc(value)
+            except Exception as e:
+                raise ValueError(f"Math Error in second derivative at {value}: {e}")
+
+        x_current = self.x0
+        x_old = x_current
+        x_new = x_current
+
+        for i in range(self.max_iter):
+            try:
+                fx = self.round_significant(self.f(x_current))
+                fdx = self.round_significant(f_prime(x_current))
+                f2dx = self.round_significant(f_double_prime(x_current))
+
+                denominator = (fdx**2) - (fx * f2dx)
+
+                if denominator == 0:
+                    return {
+                        "status": "error",
+                        "root": x_current,
+                        "steps": [asdict(s) for s in self.steps],
+                        "message": f"Denominator is zero at x={x_current}."
+                    }
+
+                x_new = self.round_significant(x_current - ((fx * fdx) / denominator))
+
+                if i == 0:
+                    error = 100.0
+                else:
+                    error = self.calculate_error(x_new, x_current)
+
+                correctSFs = self.number_of_significant_figures(error)
+
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "root": x_new,
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": f"Math Error at iteration {i}: {str(e)}"
+                }
+
+            step_traces = [
+                {"x": [x_current], "y": [fx], "type": "scatter", "mode": "markers",
+                 "marker": {"color": "red", "size": 8}, "name": "Current Point"},
+
+                {"x": [x_current, x_new], "y": [fx, 0], "type": "scatter", "mode": "lines",
+                 "line": {"color": "purple", "dash": "dot", "width": 2}, "name": "Modified Step"},
+
+                {"x": [x_new], "y": [0], "type": "scatter", "mode": "markers",
+                 "marker": {"color": "blue", "size": 8}, "name": "New Estimate"}
+            ]
+
+            step_record = IterationStep(
+                step_number=i,
+                numericals={
+                    "x_old": x_old,
+                    "x_current": x_current,
+                    "f(x)": fx,
+                    "f'(x)": fdx,
+                    "f''(x)": f2dx,
+                    "x_new": x_new,
+                    "error": error,
+                    "correctSFs": correctSFs
+                },
+                description=f"Modified NR step from {x_current} to {x_new}",
+                plot_data=step_traces
+            )
+
+            self.steps.append(step_record)
+
+            if error < self.tolerance:
+                return {
+                    "status": "success",
+                    "root": x_new,
+                    "steps": [asdict(s) for s in self.steps],
+                    "message": "Converged successfully."
+                }
+
+            x_old = x_current
+            x_current = x_new
+
+        return {
+            "status": "success",
+            "root": x_new,
+            "steps": [asdict(s) for s in self.steps],
+            "message": f"Max iterations ({self.max_iter}) reached."
+        }
 
 
 class SecantMethod(OpenSolver):
