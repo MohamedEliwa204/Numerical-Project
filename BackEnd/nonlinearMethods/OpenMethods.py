@@ -43,6 +43,40 @@ class FixedPoint(OpenSolver):
              "line": {"color": "red", "width": 2},
              "name": f"Iteration {current_iteration} horizontal"}
         ]
+        # ----- Add y=x and y=g(x) curves -----
+        # Create x-range around current guess
+        # x_min = xr_old - 5
+        # x_max = xr_old + 5
+        x_min=-10
+        x_max=10
+        xs = np.linspace(x_min, x_max, 200)
+
+        # g(x) values
+        try:
+            ys_g = [self.f(v) for v in xs]
+        except Exception:
+            ys_g = [None for _ in xs]  # safe fallback
+
+        # Add y=x line
+        step_traces.append({
+            "x": xs.tolist(),
+            "y": xs.tolist(),
+            "type": "scatter",
+            "mode": "lines",
+            "line": {"color": "deep pink", "width": 2},
+            "name": "y = x"
+        })
+
+        # Add g(x) curve
+        step_traces.append({
+            "x": xs.tolist(),
+            "y": ys_g,
+            "type": "scatter",
+            "mode": "lines",
+            "line": {"color": "green", "width": 2},
+            "name": "y = g(x)"
+        })
+
         step_record = IterationStep(
             step_number=current_iteration,
             numericals={
@@ -79,6 +113,41 @@ class FixedPoint(OpenSolver):
                      "line": {"color": "red", "width": 2},
                      "name": f"Iteration {current_iteration} horizontal"}
                 ]
+                # ----- Add y=x and y=g(x) curves -----
+
+
+                # Create x-range around current guess
+                # x_min = xr_old - 5
+                # x_max = xr_old + 5
+                x_min=-10
+                x_max=10
+                xs = np.linspace(x_min, x_max, 200)
+
+                # g(x) values
+                try:
+                    ys_g = [self.f(v) for v in xs]
+                except Exception:
+                    ys_g = [None for _ in xs]  # safe fallback
+
+                # Add y=x line
+                step_traces.append({
+                    "x": xs.tolist(),
+                    "y": xs.tolist(),
+                    "type": "scatter",
+                    "mode": "lines",
+                    "line": {"color": "deep pink", "width": 2},
+                    "name": "y = x"
+                })
+
+                # Add g(x) curve
+                step_traces.append({
+                    "x": xs.tolist(),
+                    "y": ys_g,
+                    "type": "scatter",
+                    "mode": "lines",
+                    "line": {"color": "green", "width": 2},
+                    "name": "y = g(x)"
+                })
 
                 step_record = IterationStep(
                     step_number=current_iteration,
