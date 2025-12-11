@@ -16,7 +16,7 @@
                 <input type="text" [ngModel]="equation()" (ngModelChange)="equation.set($event)" 
                        placeholder="e.g., x^2 - 4*x + 4" class="equation-input">
             </div>
-            <button (click)="onPlot()" class="btn-plot">📈 Plot</button>
+            <button (click)="onPlot()" class="btn-plot" [disabled]="!canPlot">📈 Plot</button>
             <button (click)="onSolve()" class="btn-solve" [disabled]="isLoading() || !canSolve">
                 {{ isLoading() ? '⏳' : '🔍' }} {{ isLoading() ? 'Solving...' : 'Find Root' }}
             </button>
@@ -163,24 +163,18 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>x<sub>l</sub></th>
-                                <th>x<sub>u</sub></th>
-                                <th>x<sub>r</sub></th>
-                                <th>f(x<sub>r</sub>)</th>
-                                <th>Error %</th>
-                                <th>SFs</th>
+                                @for (header of tableHeaders; track header) {
+                                    <th>{{ header }}</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
                             @for (step of result().steps; track step.step_number; let idx = $index) {
                                 <tr [class.active]="idx === currentStepIndex()" (click)="goToStep(idx)">
                                     <td>{{ step.step_number + 1 }}</td>
-                                    <td>{{ step.numericals['xl'] }}</td>
-                                    <td>{{ step.numericals['xu'] }}</td>
-                                    <td>{{ step.numericals['xr'] }}</td>
-                                    <td>{{ step.numericals['f(xr)'] }}</td>
-                                    <td>{{ step.numericals['error'] | number:'1.2-4' }}%</td>
-                                    <td>{{ step.numericals['correctSFs'] }}</td>
+                                    @for (header of tableHeaders; track header) {
+                                        <td>{{ step.numericals[header] }}</td>
+                                    }
                                 </tr>
                             }
                         </tbody>

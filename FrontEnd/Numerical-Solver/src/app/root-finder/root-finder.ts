@@ -87,11 +87,42 @@ export class RootFinder implements OnInit {
     return true;
   }
 
+  get canPlot(): boolean {
+    // Must have equation
+    if (!this.equation().trim()) return false;
+    // If Fixed Point, must also have g(x)
+    if (this.isFixedPoint && !this.gx().trim()) return false;
+    return true;
+  }
+
   get gxError(): string {
     if (this.isFixedPoint && this.gxTouched() && !this.gx().trim()) {
       return 'g(x) function is required for Fixed Point method';
     }
     return '';
+  }
+
+  // Generate the y=x line trace for Fixed Point method
+  private getYEqualsXTrace(): any {
+    const xMin = -10;
+    const xMax = 10;
+    const xValues = [];
+    const yValues = [];
+    const step = 0.1;
+    
+    for (let x = xMin; x <= xMax; x += step) {
+      xValues.push(x);
+      yValues.push(x); // y = x
+    }
+    
+    return {
+      x: xValues,
+      y: yValues,
+      type: 'scatter',
+      mode: 'lines',
+      name: 'y = x',
+      line: { color: '#ff6b6b', width: 2, dash: 'solid' }
+    };
   }
 
   onPlot() {
@@ -105,15 +136,22 @@ export class RootFinder implements OnInit {
 
     // Assuming backend has a plot endpoint that returns Plotly JSON
     this.api.getFunctionPlot({
-      func: this.equation(),
+      func: (this.isFixedPoint) ? this.gx() : this.equation(),
       method: (this.method == "Fixed Point") ? "fixed_point" : undefined
     }).subscribe({
       next: (response) => {
         this.plotData.set(response);
-        // Store the base plot data and layout for later overlay
-        this.basePlotData.set(response.data);
+        
+        // Add y=x line for Fixed Point method
+        let plotDataWithExtras = [...response.data];
+        if (this.isFixedPoint) {
+          plotDataWithExtras.push(this.getYEqualsXTrace());
+        }
+        
+        // Store the base plot data (including y=x for fixed point) and layout
+        this.basePlotData.set(plotDataWithExtras);
         this.basePlotLayout.set(response.layout);
-        this.renderPlot(response.data, response.layout);
+        this.renderPlot(plotDataWithExtras, response.layout);
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -178,6 +216,15 @@ export class RootFinder implements OnInit {
     return result.steps[this.currentStepIndex()];
   }
 
+  // Get dynamic table headers from the first step's numericals keys
+  get tableHeaders(): string[] {
+    const result = this.result();
+    if (!result || !result.steps || result.steps.length === 0) return [];
+    const firstStep = result.steps[0];
+    if (!firstStep.numericals) return [];
+    return Object.keys(firstStep.numericals);
+  }
+
   onSolve() {
     if (!this.equation()) {
       this.errorMessage.set('Please enter an equation.');
@@ -191,7 +238,7 @@ export class RootFinder implements OnInit {
 
 
     let payload: any = {
-      func: (this.method == "Fixed Point") ? this.gx().toLowerCase() : this.equation().toLowerCase(),
+      func: (this.isFixedPoint) ? this.gx().toLowerCase() : this.equation().toLowerCase(),
       precision: this.precision(),
       max_iter: this.maxIterations(),
       tolerance: this.epsilon()
