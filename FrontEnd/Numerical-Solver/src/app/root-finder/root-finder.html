@@ -17,7 +17,7 @@
                        placeholder="e.g., x^2 - 4*x + 4" class="equation-input">
             </div>
             <button (click)="onPlot()" class="btn-plot">📈 Plot</button>
-            <button (click)="onSolve()" class="btn-solve" [disabled]="isLoading()">
+            <button (click)="onSolve()" class="btn-solve" [disabled]="isLoading() || !canSolve">
                 {{ isLoading() ? '⏳' : '🔍' }} {{ isLoading() ? 'Solving...' : 'Find Root' }}
             </button>
         </div>
@@ -78,6 +78,19 @@
                             <label>X<sub>0</sub> (Initial)</label>
                             <input type="number" [ngModel]="x0()" (ngModelChange)="x0.set($event)">
                         </div>
+                        @if (isFixedPoint) {
+                            <div class="param-field gx-field">
+                                <label>g(x) Function</label>
+                                <input type="text" [ngModel]="gx()" 
+                                       (ngModelChange)="gx.set($event); gxTouched.set(true)" 
+                                       (blur)="gxTouched.set(true)"
+                                       placeholder="e.g., (x + 2)^0.5" 
+                                       [class.invalid]="gxTouched() && !gx().trim()">
+                                @if (gxError) {
+                                    <span class="field-error">{{ gxError }}</span>
+                                }
+                            </div>
+                        }
                         @if (isSecant) {
                             <div class="param-field">
                                 <label>X<sub>1</sub> (Second)</label>

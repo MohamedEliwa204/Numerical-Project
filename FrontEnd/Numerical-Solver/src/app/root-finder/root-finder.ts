@@ -26,6 +26,8 @@ export class RootFinder implements OnInit {
   xu = signal<number>(1);
   x0 = signal<number>(0);
   x1 = signal<number>(1); // For Secant
+  gx = signal<string>(''); // For Fixed Point - g(x) function
+  gxTouched = signal<boolean>(false); // Track if user has interacted with g(x)
 
   // State
   isLoading = signal<boolean>(false);
@@ -55,6 +57,7 @@ export class RootFinder implements OnInit {
       this.basePlotData.set([]);
       this.basePlotLayout.set(null);
       this.currentStepIndex.set(0);
+      this.gxTouched.set(false);
     });
   }
 
@@ -70,6 +73,25 @@ export class RootFinder implements OnInit {
 
   get isSecant(): boolean {
     return this.method === 'Secant Method';
+  }
+
+  get isFixedPoint(): boolean {
+    return this.method === 'Fixed Point';
+  }
+
+  get canSolve(): boolean {
+    // Must have equation
+    if (!this.equation()) return false;
+    // If Fixed Point, must have g(x)
+    if (this.isFixedPoint && !this.gx().trim()) return false;
+    return true;
+  }
+
+  get gxError(): string {
+    if (this.isFixedPoint && this.gxTouched() && !this.gx().trim()) {
+      return 'g(x) function is required for Fixed Point method';
+    }
+    return '';
   }
 
   onPlot() {
@@ -169,7 +191,7 @@ export class RootFinder implements OnInit {
 
 
     let payload: any = {
-      func: this.equation().toLowerCase(),
+      func: (this.method == "Fixed Point") ? this.gx().toLowerCase() : this.equation().toLowerCase(),
       precision: this.precision(),
       max_iter: this.maxIterations(),
       tolerance: this.epsilon()
@@ -215,6 +237,7 @@ export class RootFinder implements OnInit {
     this.api.solveRoot(payload).subscribe({
       next: (response) => {
         this.result.set(response);
+        console.log(response)
         this.currentStepIndex.set(0);
         // If we have steps and base plot, render the first step
         if (response.steps && response.steps.length > 0 && this.basePlotData().length > 0) {

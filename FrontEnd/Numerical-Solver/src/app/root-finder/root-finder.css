@@ -284,6 +284,32 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
+/* g(x) field spans full width */
+.param-field.gx-field {
+    grid-column: span 2;
+}
+
+.param-field.gx-field input {
+    font-family: 'Fira Code', monospace;
+}
+
+.param-field input.invalid {
+    border-color: #f87171;
+    background-color: #fef2f2;
+}
+
+.param-field input.invalid:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+.field-error {
+    font-size: 0.7rem;
+    color: #dc2626;
+    margin-top: 0.25rem;
+    display: block;
+}
+
 /* Result Panel */
 .result-panel {
     padding: 1rem;
