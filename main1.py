@@ -407,8 +407,8 @@ class FixedPoint(OpenSolver):
                     "message": f"Math Error at iteration {current_iteration}: {str(e)}"
                 }
 
-            status = "success" if ea <= self.tolerance else "failure"
-            message = "Converged successfully." if ea <= self.tolerance else f"Max iterations ({self.max_iter}) reached."
+        status = "success" if ea <= self.tolerance else "failure"
+        message = "Converged successfully." if ea <= self.tolerance else f"Max iterations ({self.max_iter}) reached."
 
         return {
             "status": status,
