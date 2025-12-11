@@ -136,7 +136,7 @@ export class RootFinder implements OnInit {
 
     // Assuming backend has a plot endpoint that returns Plotly JSON
     this.api.getFunctionPlot({
-      func: (this.isFixedPoint) ? this.gx() : this.equation(),
+      func: this.equation(),
       method: (this.method == "Fixed Point") ? "fixed_point" : undefined
     }).subscribe({
       next: (response) => {
@@ -144,9 +144,9 @@ export class RootFinder implements OnInit {
         
         // Add y=x line for Fixed Point method
         let plotDataWithExtras = [...response.data];
-        if (this.isFixedPoint) {
-          plotDataWithExtras.push(this.getYEqualsXTrace());
-        }
+        // if (this.isFixedPoint) {
+        //   plotDataWithExtras.push(this.getYEqualsXTrace());
+        // }
         
         // Store the base plot data (including y=x for fixed point) and layout
         this.basePlotData.set(plotDataWithExtras);
