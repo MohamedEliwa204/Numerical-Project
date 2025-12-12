@@ -63,7 +63,7 @@ class FixedPoint(OpenSolver):
             "y": xs.tolist(),
             "type": "scatter",
             "mode": "lines",
-            "line": {"color": "deep pink", "width": 2},
+            "line": {"color": "blue", "width": 2},
             "name": "y = x"
         })
 
@@ -135,7 +135,7 @@ class FixedPoint(OpenSolver):
                     "y": xs.tolist(),
                     "type": "scatter",
                     "mode": "lines",
-                    "line": {"color": "deep pink", "width": 2},
+                    "line": {"color": "blue", "width": 2},
                     "name": "y = x"
                 })
 

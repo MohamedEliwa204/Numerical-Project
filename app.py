@@ -199,7 +199,15 @@ def plot_function():
 def to_serializable(val):
     if val is None:
         return None
-    if isinstance(val, (int, float, str, bool)):
+    if isinstance(val, (int, float)):
+        # Handle special float values that aren't valid JSON
+        import math
+        if math.isinf(val):
+            return "Infinity" if val > 0 else "-Infinity"
+        if math.isnan(val):
+            return "NaN"
+        return val
+    if isinstance(val, (str, bool)):
         return val
     if hasattr(val, 'tolist'):
         # NumPy arrays / SymPy matrices
