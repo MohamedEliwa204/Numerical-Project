@@ -654,13 +654,15 @@ class SecantMethod(OpenSolver):
             try:
                 f_xold = self.round_significant(self.f(x_old))
                 f_xcur = self.round_significant(self.f(x_cur))
-                x_new = self.round_significant(x_cur - (f_xcur * (x_old - x_cur)) / (f_xold - f_xcur))
+                x_new = self.round_significant(x_cur - (f_xcur * (x_cur - x_old)) / (f_xcur - f_xold))
                 f_xnew = self.round_significant(self.f(x_new))
 
                 if i == 0:
                     error = 100.0
                 else:
                     error = self.calculate_error(x_new, x_cur)
+                    
+                correctSFs = self.number_of_significant_figures(error)
 
             except Exception as e:
                 return {
@@ -679,10 +681,10 @@ class SecantMethod(OpenSolver):
                  "marker": {"color": "red", "size": 8}, "name": "x_cur"},
                 # new approximation point
                 {"x": [x_new], "y": [0], "type": "scatter", "mode": "markers",
-                 "marker": {"color": "red", "size": 8}, "name": "x_new"},
+                 "marker": {"color": "green", "size": 8}, "name": "x_new"},
                 # secant line
-                {"x": [x_old, x_cur], "y": [f_xold, f_xcur], "type": "scatter", "mode": "lines",
-                 "line": {"color": "blue", "width": 2, "dash": "dash"}, "name": "Secant Line"}
+                {"x": [x_old, x_cur, x_new], "y": [f_xold, f_xcur, 0], "type": "scatter", "mode": "lines",
+                 "line": {"color": "black", "width": 2, "dash": "dash"}, "name": "Secant Line"}
             ]
 
             step_record = IterationStep(
@@ -692,7 +694,8 @@ class SecantMethod(OpenSolver):
                     "x1": x_cur,
                     "x_new": x_new,
                     "f(x_new)": f_xnew,
-                    "error": error
+                    "error": error,
+                    "correctSFs": correctSFs
                 },
                 description=f"Iteration {i}",
                 plot_data=step_traces
