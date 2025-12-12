@@ -464,8 +464,31 @@ class OriginalNewtonRaphson(OpenSolver):
 
         for i in range(self.max_iter):
             try:
-
                 fx = self.round_significant(self.f(x_current))
+
+                # Check for exact root
+                if fx == 0:
+                    self.steps.append(IterationStep(
+                        step_number=i,
+                        numericals={
+                            "x_old": x_old,
+                            "x_current": x_current,
+                            "f(x_current)": 0,
+                            "f'(x_current)": 0,
+                            "x_new": x_current,
+                            "error": 0,
+                            "correctSFs": self.precision
+                        },
+                        description="Exact root found.",
+                        plot_data=[{"x": [x_current], "y": [0], "type": "scatter", "mode": "markers", "marker": {"color": "green", "size": 10}, "name": "Exact Root"}]
+                    ))
+                    return {
+                        "status": "success",
+                        "root": x_current,
+                        "steps": [asdict(s) for s in self.steps],
+                        "message": "Exact root found."
+                    }
+
                 fdx = self.round_significant(f_deriv(x_current))
 
                 if fdx == 0:
@@ -576,6 +599,27 @@ class ModifiedNewtonRaphson(OpenSolver):
         for i in range(self.max_iter):
             try:
                 fx = self.round_significant(self.f(x_current))
+
+                if fx == 0:
+                    self.steps.append(IterationStep(
+                        step_number=i,
+                        numericals={
+                            "x_old": x_old,
+                            "x_current": x_current,
+                            "f(x)": 0, "f'(x)": 0, "f''(x)": 0,
+                            "x_new": x_current,
+                            "error": 0,
+                            "correctSFs": self.precision
+                        },
+                        description="Exact root found.",
+                        plot_data=[{"x": [x_current], "y": [0], "type": "scatter", "mode": "markers", "marker": {"color": "green", "size": 10}, "name": "Exact Root"}]
+                    ))
+                    return {
+                        "status": "success",
+                        "root": x_current,
+                        "steps": [asdict(s) for s in self.steps],
+                        "message": "Exact root found."
+                    }
                 fdx = self.round_significant(f_prime(x_current))
                 f2dx = self.round_significant(f_double_prime(x_current))
 
