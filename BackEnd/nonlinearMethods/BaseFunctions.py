@@ -10,6 +10,29 @@ from typing_extensions import override
 import sympy as sp
 from IterationStep import IterationStep
 
+# Local dictionary for common math functions and constants
+MATH_LOCAL_DICT = {
+    'e': sp.E,
+    'pi': sp.pi,
+    'sin': sp.sin,
+    'cos': sp.cos,
+    'tan': sp.tan,
+    'cot': sp.cot,
+    'sec': sp.sec,
+    'csc': sp.csc,
+    'asin': sp.asin,
+    'acos': sp.acos,
+    'atan': sp.atan,
+    'sinh': sp.sinh,
+    'cosh': sp.cosh,
+    'tanh': sp.tanh,
+    'exp': sp.exp,
+    'log': sp.log,
+    'ln': sp.ln,
+    'sqrt': sp.sqrt,
+    'abs': sp.Abs,
+}
+
 
 class RootSolver(ABC):
     def __init__(self, func_str, precision=10, max_iter=50, tolerance=1e-5):
@@ -22,7 +45,7 @@ class RootSolver(ABC):
         transformations = (standard_transformations + (implicit_multiplication_application, convert_xor))
 
         try:
-            self.expr = parse_expr(self.func_str, transformations=transformations)
+            self.expr = parse_expr(self.func_str, local_dict=MATH_LOCAL_DICT, transformations=transformations)
         except:
             raise ValueError("couldn't parse the expression")
 
