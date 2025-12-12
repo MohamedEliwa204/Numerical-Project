@@ -129,7 +129,7 @@ class FalsePosition(BracketingSolver):
 
                 fxl = self.round_significant(self.f(xl))
                 fxu = self.round_significant(self.f(xu))
-                xr = self.round_significant(((xl * fxu) - (xu - fxl)) / (fxu - fxl))
+                xr = self.round_significant(((xl * fxu) - (xu * fxl)) / (fxu - fxl))
                 fxr = self.round_significant(self.f(xr))
 
                 if i == 0:
