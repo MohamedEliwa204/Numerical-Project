@@ -3,6 +3,29 @@ import sympy as sp
 from sympy import parse_expr
 from sympy.parsing.sympy_parser import standard_transformations, implicit_multiplication_application, convert_xor
 
+# Local dictionary for common math functions and constants
+MATH_LOCAL_DICT = {
+    'e': sp.E,
+    'pi': sp.pi,
+    'sin': sp.sin,
+    'cos': sp.cos,
+    'tan': sp.tan,
+    'cot': sp.cot,
+    'sec': sp.sec,
+    'csc': sp.csc,
+    'asin': sp.asin,
+    'acos': sp.acos,
+    'atan': sp.atan,
+    'sinh': sp.sinh,
+    'cosh': sp.cosh,
+    'tanh': sp.tanh,
+    'exp': sp.exp,
+    'log': sp.log,
+    'ln': sp.ln,
+    'sqrt': sp.sqrt,
+    'abs': sp.Abs,
+}
+
 
 class Plotter:
     @staticmethod
@@ -10,7 +33,7 @@ class Plotter:
         transformations = (standard_transformations + (implicit_multiplication_application, convert_xor))
 
         try:
-            expr = parse_expr(func_str, transformations=transformations)
+            expr = parse_expr(func_str, local_dict=MATH_LOCAL_DICT, transformations=transformations)
 
             symbols = list(expr.free_symbols)
             if len(symbols) > 1:
