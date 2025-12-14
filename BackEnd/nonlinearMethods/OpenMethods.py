@@ -100,7 +100,7 @@ class FixedPoint(OpenSolver):
                 xr_new = self.round_significant(self.f(xr_old))
                 xr = xr_new
                 ea = abs((xr_new - xr_old) / (xr_new if xr_new != 0 else 1e-12)) * 100
-                crf = self.number_of_significant_figures(ea)
+                crf = self.number_of_significant_figures(ea, xr)
 
                 # Build iteration plot traces (staircase)
                 step_traces = [
