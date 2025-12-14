@@ -447,12 +447,12 @@ class SecantMethod(OpenSolver):
         x0 = self.x0
         x1 = self.x1
 
-        if x1 is None:
+        if x1 is None or x0 == x1:
             return {
                 "status": "error",
                 "root": None,
                 "steps": [],
-                "message": "Initialization Failed: Secant Method requires two initial guesses (x0 and x1)."
+                "message": "Initialization Failed: Secant Method requires two distinct initial guesses (x0 and x1)."
             }
 
         x_old = x0
@@ -481,6 +481,15 @@ class SecantMethod(OpenSolver):
                 "message": f"Math Error at iteration {i}: {str(e)}"
             }
 
+            m = (f_xcur - f_xold) / (x_cur - x_old)
+            b = f_xold - m * x_old
+            
+            x_min = min(x_old, x_cur, x_new)
+            x_max = max(x_old, x_cur, x_new)
+            
+            x_line = [x_min, x_max]
+            y_line = [m*x_min + b, m*x_max + b]
+
             step_traces = [
                 # old point
                 {"x": [x_old], "y": [f_xold], "type": "scatter", "mode": "markers",
@@ -492,7 +501,7 @@ class SecantMethod(OpenSolver):
                 {"x": [x_new], "y": [0], "type": "scatter", "mode": "markers",
                  "marker": {"color": "green", "size": 8}, "name": "x_new"},
                 # secant line
-                {"x": [x_old, x_cur, x_new], "y": [f_xold, f_xcur, 0], "type": "scatter", "mode": "lines",
+                {"x": x_line, "y": y_line, "type": "scatter", "mode": "lines",
                  "line": {"color": "black", "width": 2, "dash": "dash"}, "name": "Secant Line"}
             ]
 
