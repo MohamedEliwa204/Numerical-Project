@@ -176,15 +176,20 @@ class FixedPoint(OpenSolver):
                     "message": f"Math Error at iteration {current_iteration}: {str(e)}"
                 }
 
-        status = "success" if ea <= self.tolerance else "failure"
-        message = "Converged successfully." if ea <= self.tolerance else f"Max iterations ({self.max_iter}) reached."
-
-        return {
-            "status": status,
-            "root": xr,
-            "steps": [asdict(s) for s in self.steps],
-            "message": message
-        }
+        if ea <= self.tolerance:
+            return {
+                "status": "success",
+                "root": xr,
+                "steps": [asdict(s) for s in self.steps],
+                "message": "Converged successfully."
+            }
+        else:
+            return {
+                "status": "failure",
+                "root": xr,
+                "steps": [asdict(s) for s in self.steps],
+                "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
+            }
 
 
 
@@ -312,7 +317,7 @@ class OriginalNewtonRaphson(OpenSolver):
             "status": "failure",
             "root": x_new,
             "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached."
+            "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
         }
 
 
@@ -438,10 +443,10 @@ class ModifiedNewtonRaphson(OpenSolver):
             x_current = x_new
 
         return {
-            "status": "success",
+            "status": "failure",
             "root": x_new,
             "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached."
+            "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
         }
 
 
@@ -541,5 +546,5 @@ class SecantMethod(OpenSolver):
             "status": "failure",
             "root": x_new,
             "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached."
+            "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
         }

@@ -103,10 +103,10 @@ class Bisection(BracketingSolver):
             xr_old = xr
 
         return {
-            "status": "success",  # Or "warning"
+            "status": "failure",
             "root": xr,
             "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached without full convergence."
+            "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
         }
 
 
@@ -210,8 +210,8 @@ class FalsePosition(BracketingSolver):
             xr_old = xr
 
         return {
-            "status": "success",
+            "status": "failure",
             "root": xr,
             "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached."
+            "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
         }
