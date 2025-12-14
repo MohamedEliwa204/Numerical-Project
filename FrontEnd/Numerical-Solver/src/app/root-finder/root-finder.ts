@@ -269,7 +269,7 @@ export class RootFinder implements OnInit {
 
     // Bracket errors
     if (msg.includes('bracket') || msg.includes('not bracketed')) {
-      return 'The root is not bracketed between the given bounds. Ensure f(xl) and f(xu) have opposite signs.';
+      return 'The root is not bracketed between the given bounds. Ensure f(xl) and f(xu) have opposite signs. May have discontinuity or even roots';
     }
 
     // Parse errors

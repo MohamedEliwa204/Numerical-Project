@@ -464,31 +464,8 @@ class OriginalNewtonRaphson(OpenSolver):
 
         for i in range(self.max_iter):
             try:
+
                 fx = self.round_significant(self.f(x_current))
-
-                # Check for exact root
-                if fx == 0:
-                    self.steps.append(IterationStep(
-                        step_number=i,
-                        numericals={
-                            "x_old": x_old,
-                            "x_current": x_current,
-                            "f(x_current)": 0,
-                            "f'(x_current)": 0,
-                            "x_new": x_current,
-                            "error": 0,
-                            "correctSFs": self.precision
-                        },
-                        description="Exact root found.",
-                        plot_data=[{"x": [x_current], "y": [0], "type": "scatter", "mode": "markers", "marker": {"color": "green", "size": 10}, "name": "Exact Root"}]
-                    ))
-                    return {
-                        "status": "success",
-                        "root": x_current,
-                        "steps": [asdict(s) for s in self.steps],
-                        "message": "Exact root found."
-                    }
-
                 fdx = self.round_significant(f_deriv(x_current))
 
                 if fdx == 0:
@@ -599,27 +576,6 @@ class ModifiedNewtonRaphson(OpenSolver):
         for i in range(self.max_iter):
             try:
                 fx = self.round_significant(self.f(x_current))
-
-                if fx == 0:
-                    self.steps.append(IterationStep(
-                        step_number=i,
-                        numericals={
-                            "x_old": x_old,
-                            "x_current": x_current,
-                            "f(x)": 0, "f'(x)": 0, "f''(x)": 0,
-                            "x_new": x_current,
-                            "error": 0,
-                            "correctSFs": self.precision
-                        },
-                        description="Exact root found.",
-                        plot_data=[{"x": [x_current], "y": [0], "type": "scatter", "mode": "markers", "marker": {"color": "green", "size": 10}, "name": "Exact Root"}]
-                    ))
-                    return {
-                        "status": "success",
-                        "root": x_current,
-                        "steps": [asdict(s) for s in self.steps],
-                        "message": "Exact root found."
-                    }
                 fdx = self.round_significant(f_prime(x_current))
                 f2dx = self.round_significant(f_double_prime(x_current))
 
@@ -721,15 +677,13 @@ class SecantMethod(OpenSolver):
             try:
                 f_xold = self.round_significant(self.f(x_old))
                 f_xcur = self.round_significant(self.f(x_cur))
-                x_new = self.round_significant(x_cur - (f_xcur * (x_cur - x_old)) / (f_xcur - f_xold))
+                x_new = self.round_significant(x_cur - (f_xcur * (x_old - x_cur)) / (f_xold - f_xcur))
                 f_xnew = self.round_significant(self.f(x_new))
 
                 if i == 0:
                     error = 100.0
                 else:
                     error = self.calculate_error(x_new, x_cur)
-                    
-                correctSFs = self.number_of_significant_figures(error)
 
             except Exception as e:
                 return {
@@ -738,15 +692,6 @@ class SecantMethod(OpenSolver):
                 "steps": [asdict(s) for s in self.steps],  # Return what we have so far
                 "message": f"Math Error at iteration {i}: {str(e)}"
             }
-
-            m = (f_xcur - f_xold) / (x_cur - x_old)
-            b = f_xold - m * x_old
-            
-            x_min = min(x_old, x_cur, x_new)
-            x_max = max(x_old, x_cur, x_new)
-            
-            x_line = [x_min, x_max]
-            y_line = [m*x_min + b, m*x_max + b]
 
             step_traces = [
                 # old point
@@ -757,10 +702,10 @@ class SecantMethod(OpenSolver):
                  "marker": {"color": "red", "size": 8}, "name": "x_cur"},
                 # new approximation point
                 {"x": [x_new], "y": [0], "type": "scatter", "mode": "markers",
-                 "marker": {"color": "green", "size": 8}, "name": "x_new"},
+                 "marker": {"color": "red", "size": 8}, "name": "x_new"},
                 # secant line
-                {"x": x_line, "y": y_line, "type": "scatter", "mode": "lines",
-                 "line": {"color": "black", "width": 2, "dash": "dash"}, "name": "Secant Line"}
+                {"x": [x_old, x_cur], "y": [f_xold, f_xcur], "type": "scatter", "mode": "lines",
+                 "line": {"color": "blue", "width": 2, "dash": "dash"}, "name": "Secant Line"}
             ]
 
             step_record = IterationStep(
@@ -770,8 +715,7 @@ class SecantMethod(OpenSolver):
                     "x1": x_cur,
                     "x_new": x_new,
                     "f(x_new)": f_xnew,
-                    "error": error,
-                    "correctSFs": correctSFs
+                    "error": error
                 },
                 description=f"Iteration {i}",
                 plot_data=step_traces
