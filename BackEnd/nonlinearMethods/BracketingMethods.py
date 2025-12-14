@@ -39,7 +39,7 @@ class Bisection(BracketingSolver):
                 else:
                     error = self.calculate_error(xr, xr_old)
                     
-                correctSFs = self.number_of_significant_figures(error)
+                correctSFs = self.number_of_significant_figures(error, xr)
             except Exception as e:
                 # Catch Math Errors (like Overflow/NaN) in the middle
                 return {
@@ -136,8 +136,8 @@ class FalsePosition(BracketingSolver):
                     error = 100.0
                 else:
                     error = self.calculate_error(xr, xr_old)
-                    
-                correctSFs = self.number_of_significant_figures(error)
+
+                correctSFs = self.number_of_significant_figures(error, xr)
             except Exception as e:
 
                 return {

@@ -26,6 +26,8 @@ class FixedPoint(OpenSolver):
             ea=self.calculate_error(xr, xr_old)
         except Exception:
             ea=100.0
+            
+        correctSFs = self.number_of_significant_figures(ea, xr)
         #for first itteration
         step_traces = [
             # vertical line from (xr_old, xr_old) to (xr_old, g(xr_old))
@@ -83,7 +85,8 @@ class FixedPoint(OpenSolver):
                 "xr_old": xr_old,
                 "xr_new": xr,
                 "g(xr_old)": xr,
-                "error": ea
+                "error": ea,
+                "correctSFs": correctSFs
             },
             description=f"Iteration {current_iteration}: xr_old={xr_old}, xr_new={xr}",
             plot_data=step_traces
@@ -155,7 +158,8 @@ class FixedPoint(OpenSolver):
                         "xr_old": xr_old,
                         "xr_new": xr_new,
                         "g(xr_old)": xr_new,
-                        "error": ea
+                        "error": ea,
+                        "correctSFs": correctSFs
                     },
                     description=f"Iteration {current_iteration}: xr_old={xr_old}, xr_new={xr_new}",
                     plot_data=step_traces
@@ -248,7 +252,7 @@ class OriginalNewtonRaphson(OpenSolver):
                 else:
                     error = self.calculate_error(x_new, x_current)
 
-                correctSFs = self.number_of_significant_figures(error)
+                correctSFs = self.number_of_significant_figures(error, x_new)
 
             except Exception as e:
                 return {
@@ -382,7 +386,7 @@ class ModifiedNewtonRaphson(OpenSolver):
                 else:
                     error = self.calculate_error(x_new, x_current)
 
-                correctSFs = self.number_of_significant_figures(error)
+                correctSFs = self.number_of_significant_figures(error, x_new)
 
             except Exception as e:
                 return {
@@ -471,7 +475,7 @@ class SecantMethod(OpenSolver):
                 else:
                     error = self.calculate_error(x_new, x_cur)
                     
-                correctSFs = self.number_of_significant_figures(error)
+                correctSFs = self.number_of_significant_figures(error, x_new)
 
             except Exception as e:
                 return {
