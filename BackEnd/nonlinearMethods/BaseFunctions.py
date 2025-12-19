@@ -77,21 +77,7 @@ class RootSolver(ABC):
         if error > 5:
             m = 0
         elif error == 0: # Exact root found
-            s = str(abs(x_new))
-            if '.' in s:
-                integer_part, fractional_part = s.split('.')
-                
-                if x_new < 1:
-                    integer_digits = 0  # No integer digits for numbers < 1
-                    fractional_digits = len(fractional_part.lstrip('0'))  # Count digits in fractional part excluding leading zeros
-                else:
-                    integer_digits = len(integer_part)
-                    temp = int(fractional_part)
-                    fractional_digits = len(fractional_part) if temp != 0 else 0
-
-                m = integer_digits + fractional_digits
-            else :
-                m = len(s)
+            m = self.precision
         else:
             m = max(math.floor(2 - math.log10(2*error)), 0)
         return m
