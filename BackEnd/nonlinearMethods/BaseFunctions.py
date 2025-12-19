@@ -80,8 +80,7 @@ class RootSolver(ABC):
             s = str(abs(x_new))
             if '.' in s:
                 integer_part, fractional_part = s.split('.')
-                
-                if x_new < 1:
+                if abs(x_new) < 1:
                     integer_digits = 0  # No integer digits for numbers < 1
                     fractional_digits = len(fractional_part.lstrip('0'))  # Count digits in fractional part excluding leading zeros
                 else:

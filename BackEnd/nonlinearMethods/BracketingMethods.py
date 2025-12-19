@@ -39,7 +39,6 @@ class Bisection(BracketingSolver):
                 else:
                     error = self.calculate_error(xr, xr_old)
                     
-                correctSFs = self.number_of_significant_figures(error, xr)
             except Exception as e:
                 # Catch Math Errors (like Overflow/NaN) in the middle
                 return {
@@ -68,6 +67,7 @@ class Bisection(BracketingSolver):
                 error = 0.0
                 next_xl, next_xu = xr, xr
 
+            correctSFs = self.number_of_significant_figures(error, xr)
             step_traces = [
                 {"x": [xl, xl], "y": [0, fxl], "type": "scatter", "mode": "lines",
                  "line": {"color": "green", "dash": "dash"}, "name": "xl"},
@@ -137,7 +137,6 @@ class FalsePosition(BracketingSolver):
                 else:
                     error = self.calculate_error(xr, xr_old)
 
-                correctSFs = self.number_of_significant_figures(error, xr)
             except Exception as e:
 
                 return {
@@ -165,6 +164,8 @@ class FalsePosition(BracketingSolver):
                 desc = "Exact root found."
                 error = 0.0
                 next_xl, next_xu = xr, xr
+            
+            correctSFs = self.number_of_significant_figures(error, xr)
             step_traces = [
                 # Vertical Line at xl
                 {"x": [xl, xl], "y": [0, fxl], "type": "scatter", "mode": "lines",

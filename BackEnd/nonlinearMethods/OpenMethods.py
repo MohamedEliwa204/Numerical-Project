@@ -100,7 +100,7 @@ class FixedPoint(OpenSolver):
                 xr_new = self.round_significant(self.f(xr_old))
                 xr = xr_new
                 ea = abs((xr_new - xr_old) / (xr_new if xr_new != 0 else 1e-12)) * 100
-                crf = self.number_of_significant_figures(ea, xr)
+                correctSFs = self.number_of_significant_figures(ea, xr)
 
                 # Build iteration plot traces (staircase)
                 step_traces = [
@@ -229,7 +229,7 @@ class OriginalNewtonRaphson(OpenSolver):
                             "f'(x_current)": 0,
                             "x_new": x_current,
                             "error": 0,
-                            "correctSFs": self.precision
+                            "correctSFs": self.number_of_significant_figures(0, x_current)
                         },
                         description="Exact root found.",
                         plot_data=[{"x": [x_current], "y": [0], "type": "scatter", "mode": "markers", "marker": {"color": "green", "size": 10}, "name": "Exact Root"}]
@@ -361,7 +361,7 @@ class ModifiedNewtonRaphson(OpenSolver):
                             "f(x)": 0, "f'(x)": 0, "f''(x)": 0,
                             "x_new": x_current,
                             "error": 0,
-                            "correctSFs": self.precision
+                            "correctSFs": self.number_of_significant_figures(0, x_current)
                         },
                         description="Exact root found.",
                         plot_data=[{"x": [x_current], "y": [0], "type": "scatter", "mode": "markers", "marker": {"color": "green", "size": 10}, "name": "Exact Root"}]
