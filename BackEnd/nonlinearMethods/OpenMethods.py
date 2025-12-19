@@ -473,7 +473,7 @@ class SecantMethod(OpenSolver):
             try:
                 f_xold = self.round_significant(self.f(x_old))
                 f_xcur = self.round_significant(self.f(x_cur))
-                x_new = self.round_significant(x_cur - (f_xcur * (x_cur - x_old)) / (f_xcur - f_xold))
+                x_new = self.round_significant(x_cur - (f_xcur * (x_old - x_cur)) / (f_xold - f_xcur))
                 f_xnew = self.round_significant(self.f(x_new))
 
                 if i == 0:
