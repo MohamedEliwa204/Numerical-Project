@@ -1,14 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from SolverFactory import NumericalSolverFactory, SymbolicSolverFactory, AbstractSolverFactory
+from SolverFactory import NumericalSolverFactory, SymbolicSolverFactory, AbstractSolverFactory, NonLinearSolverFactory
 from mainSymbols import *
-from BackEnd.methods import *
+from BackEnd.linearMethods import *
+from BackEnd.nonlinearMethods import *
+from Plotter import Plotter
 import numpy as np
 import time
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:4200"}}, supports_credentials=True)
 
 @app.route('/solve', methods=['POST'])
 def solve_system():
@@ -65,23 +67,6 @@ def solve_system():
             print(f"Symbolic mode - b: {b_symbolic}")
             print(f"Symbolic mode - n: {n}")
             solver = factory.create_solver(method, n, A_symbolic, b_symbolic)
-        # match method:
-        #     case 'GaussElimination':
-        #         solver = GaussElimination(A, b, precision, withScaling)
-        #     case 'GaussJordan':
-        #         solver = GaussJordan(A, b, precision, withScaling)
-        #     case 'DoolittleLUDecomposition':
-        #         solver = DoolittleLUDecomposition(A, b, precision, withScaling)
-        #     case 'CroutLUDecomposition':
-        #         solver = CroutLUDecomposition(A, b, precision)
-        #     case 'CholeskyLUDecomposition':
-        #         solver = CholeskyLUDecomposition(A, b, precision)
-        #     case 'GaussSeidel':
-        #         solver = GaussSeidel(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
-        #     case 'JacobiIteration':
-        #         solver = JacobiIteration(A, b, precision, initial_guess, num_of_ites, abs_rel_error)
-        #     case None:
-        #         return jsonify({'error': 'Selection of method is required'}), 400
 
         startTime = time.time()
 
@@ -93,16 +78,6 @@ def solve_system():
         
         endTime = time.time()
         executionTime = endTime - startTime
-        
-        """
-        result = {
-            'solution': solution.tolist(),
-            'executionTime': executionTime,
-        }
-        
-        if hasattr(solver, 'num_of_ites'):
-            result['num_of_ites'] = solver.num_of_ites
-        """
 
         raw_steps = getattr(solver, 'steps', [])
 
@@ -123,16 +98,122 @@ def solve_system():
             'message' : getattr(solver, 'message', "")
         })
         
+@app.route('/solve-root', methods=['POST'])
+def solve_nonlinear():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            print(data)
+        except:
+            return jsonify({'error': 'The input is not valid JSON'}), 400
+        
+        func = data.get('func')
+        method = data.get('method')
+        
+        # Parameters for Bracketing Methods
+        xl = data.get('xl')
+        xu = data.get('xu')
+        # Parameters for Open Methods
+        x0 = data.get('x0')
+        x1 = data.get('x1')
+        
+        precision = data.get('precision', 5)
+        max_iter = data.get('max_iter', 50)
+        tolerance = data.get('tolerance', 1e-5)
+
+        factory: NonLinearSolverFactory = None
+        solver = None
+        
+        if method in ['bisection', 'false_position']:
+            factory = NonLinearSolverFactory()
+            solver = factory.create_solver(
+                method,
+                func,
+                xl,
+                xu,
+                precision=precision,
+                max_iter=max_iter,
+                tolerance=tolerance
+            )
+        elif method in ['fixed_point', 'newton_raphson', 'modified_newton_raphson']:
+            factory = NonLinearSolverFactory()
+            solver = factory.create_solver(
+                method,
+                func,
+                x0,
+                precision=precision,
+                max_iter=max_iter,
+                tolerance=tolerance
+            )
+        elif method == 'secant_method':
+            factory = NonLinearSolverFactory()
+            solver = factory.create_solver(
+                method,
+                func,
+                x0,
+                x1,
+                precision=precision,
+                max_iter=max_iter,
+                tolerance=tolerance
+            )
+        
+        startTime = time.time()
+
+        try:
+            solution = solver.solve()
+
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        
+        endTime = time.time()
+        executionTime = endTime - startTime
+        
+        return jsonify({
+            'status': solution.get('status'),
+            'executionTime': executionTime,
+            'root':to_serializable(solution.get('root')),
+            'steps': to_serializable(solution.get('steps')),
+            'message' : solution.get('message', "")
+        })
+        
+        
+@app.route('/plot', methods=['POST'])
+def plot_function():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            print(data)
+        except:
+            return jsonify({'error': 'The input is not valid JSON'}), 400
+        
+        func_str = data.get('func')
+        x_min = data.get('x_min', -10.0)
+        x_max = data.get('x_max', 10.0)
+        method_type = data.get('method_type', 'bisection')
+        
+        plot_data = Plotter.get_plot_data(func_str, x_min, x_max, method_type)
+        
+        return jsonify(plot_data)
         
 # Helper to convert any value to JSON-serializable format
 def to_serializable(val):
     if val is None:
         return None
-    if isinstance(val, (int, float, str, bool)):
+    if isinstance(val, (int, float)):
+        # Handle special float values that aren't valid JSON
+        import math
+        if math.isinf(val):
+            return "Infinity" if val > 0 else "-Infinity"
+        if math.isnan(val):
+            return "NaN"
+        return val
+    if isinstance(val, (str, bool)):
         return val
     if hasattr(val, 'tolist'):
         # NumPy arrays / SymPy matrices
         return to_serializable(val.tolist())
+    if isinstance(val, dict):
+        return {to_serializable(k): to_serializable(v) for k, v in val.items()}
     # Handle any iterable (list, tuple, etc.), but avoid treating strings as iterables
     try:
         if not isinstance(val, (str, bytes)) and hasattr(val, '__iter__'):
@@ -143,4 +224,4 @@ def to_serializable(val):
     return str(val)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+     app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False)

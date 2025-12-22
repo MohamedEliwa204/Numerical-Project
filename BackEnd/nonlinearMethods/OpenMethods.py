@@ -1,339 +1,10 @@
-from dataclasses import asdict
-
-import numpy as np
-import math
-from abc import ABC, abstractmethod
-
-from sympy import parse_expr
-from sympy.parsing.sympy_parser import standard_transformations, implicit_multiplication_application, convert_xor
-from typing_extensions import override
-import sympy as sp
-from IterationStep import IterationStep
-
-# Local dictionary for common math functions and constants
-MATH_LOCAL_DICT = {
-    'e': sp.E,
-    'pi': sp.pi,
-    'sin': sp.sin,
-    'cos': sp.cos,
-    'tan': sp.tan,
-    'cot': sp.cot,
-    'sec': sp.sec,
-    'csc': sp.csc,
-    'asin': sp.asin,
-    'acos': sp.acos,
-    'atan': sp.atan,
-    'sinh': sp.sinh,
-    'cosh': sp.cosh,
-    'tanh': sp.tanh,
-    'exp': sp.exp,
-    'log': sp.log,
-    'ln': sp.ln,
-    'sqrt': sp.sqrt,
-    'abs': sp.Abs,
-}
-
-
-class RootSolver(ABC):
-    def __init__(self, func_str, precision=10, max_iter=50, tolerance=1e-5):
-        self.func_str = func_str
-        self.precision = precision
-        self.max_iter = max_iter
-        self.tolerance = tolerance
-        self.steps = []
-
-        transformations = (standard_transformations + (implicit_multiplication_application, convert_xor))
-
-        try:
-            self.expr = parse_expr(self.func_str, local_dict=MATH_LOCAL_DICT, transformations=transformations)
-        except:
-            raise ValueError("couldn't parse the expression")
-
-        symbols_found = list(self.expr.free_symbols)
-
-        if len(symbols_found) == 0:
-            self.variable = sp.Symbol('x')
-
-        elif len(symbols_found) == 1:
-            self.variable = symbols_found[0]
-        else:
-            raise ValueError(f"Too many variables found: {symbols_found}. Please use only one.")
-
-        self.f_calc = sp.lambdify(self.variable, self.expr, "numpy")
-
-    def f(self, value):
-        try:
-            return self.f_calc(value)
-        except Exception as e:
-            raise ValueError(f"Math Error at value {value}: {e}")
-
-    def calculate_error(self, x_new, x_old):
-        if x_new == 0:
-            return 0
-        else:
-            return abs(((x_new - x_old) / x_new) * 100)
-        
-    def number_of_significant_figures(self, error):
-        if error > 5:
-            m = 0
-        elif error == 0: # Exact root found
-            m = self.precision
-        else:
-            m = math.floor(2 - math.log10(2*error))
-        return m
-
-    def round_significant(self, value):
-        x = np.array(value, dtype=float)
-
-        if np.isscalar(x):
-            if not np.isfinite(x):
-                return x
-            if x == 0:
-                return 0
-            else:
-                digits = self.precision - int(np.floor(np.log10(abs(x)))) - 1
-                return round(x, digits)
-        else:
-            rounded_array = np.zeros_like(x)
-            for index, val in np.ndenumerate(x):
-                if not np.isfinite(val):
-                    rounded_array[index] = val
-                elif val == 0:
-                    rounded_array[index] = 0
-                else:
-                    digits = self.precision - int(np.floor(np.log10(abs(val)))) - 1
-                    rounded_array[index] = round(val, digits)
-            return rounded_array
-
-    @abstractmethod
-    def solve(self):
-        pass
-
-
-
-
-class BracketingSolver(RootSolver):
-    def __init__(self, func_str, xl, xu, precision=5, max_iter=50, tolerance=1e-5):
-        super().__init__(func_str, precision, max_iter, tolerance)
-        self.xl = float(xl)
-        self.xu = float(xu)
-
-    def check_bracket(self, xl, xu):
-        return self.f(xl) * self.f(xu) < 0
-
+from .BaseFunctions import *
 
 class OpenSolver(RootSolver):
     def __init__(self, func_str, x0, x1=None, precision=5, max_iter=50, tolerance=1e-5):
         super().__init__(func_str, precision, max_iter, tolerance)
         self.x0 = float(x0)
         self.x1 = float(x1) if x1 is not None else None # additional point for secant method
-
-
-class Bisection(BracketingSolver):
-    @override
-    def solve(self):
-        self.steps = []
-        if not self.check_bracket(self.xl, self.xu):
-            return {
-                "status": "error",
-                "root": None,
-                "steps": [],
-                "message": f"Initialization Failed: Root is not bracketed between {self.xl} and {self.xu}. f(xl)={self.f(self.xl):.4f}, f(xu)={self.f(self.xu):.4f}"
-            }
-        xl, xu = self.xl, self.xu
-        xr_old = xl
-        xr = xl
-
-        for i in range(self.max_iter):
-
-            try:
-                xr = self.round_significant((xl + xu) / 2)
-                fxr = self.round_significant(self.f(xr))
-                fxl = self.round_significant(self.f(xl))
-                fxu = self.round_significant(self.f(xu))
-
-                if i == 0:
-                    error = 100.0
-                else:
-                    error = self.calculate_error(xr, xr_old)
-                    
-                correctSFs = self.number_of_significant_figures(error)
-            except Exception as e:
-                # Catch Math Errors (like Overflow/NaN) in the middle
-                return {
-                    "status": "error",
-                    "root": xr,
-                    "steps": [asdict(s) for s in self.steps],  # Return what we have so far
-                    "message": f"Math Error at iteration {i}: {str(e)}"
-                }
-
-            if fxl * fxu > 0:
-                return {
-                    "status": "error",
-                    "root": xr,
-                    "steps": [asdict(s) for s in self.steps],
-                    "message": f"Bracket Lost at iteration {i}. Function may be discontinuous."
-                }
-
-            if fxl * fxr < 0:
-                desc = "Root in Left sub-interval, we replaced xu by xr."
-                next_xl, next_xu = xl, xr
-            elif fxl * fxr > 0:
-                desc = "Root in Right sub-interval, we replaced xl by xr."
-                next_xl, next_xu = xr, xu
-            else:
-                desc = "Exact root found."
-                error = 0.0
-                next_xl, next_xu = xr, xr
-
-            step_traces = [
-                {"x": [xl, xl], "y": [0, fxl], "type": "scatter", "mode": "lines",
-                 "line": {"color": "green", "dash": "dash"}, "name": "xl"},
-                {"x": [xu, xu], "y": [0, fxu], "type": "scatter", "mode": "lines",
-                 "line": {"color": "green", "dash": "dash"}, "name": "xu"},
-                {"x": [xr], "y": [fxr], "type": "scatter", "mode": "markers", "marker": {"color": "red", "size": 8},
-                 "name": "xr"}
-            ]
-
-            step_record = IterationStep(
-                step_number=i,
-                numericals={
-                    "xl": self.round_significant(xl),
-                    "xu": self.round_significant(xu),
-                    "xr": self.round_significant(xr),
-                    "f(xr)": self.round_significant(fxr),
-                    "error": error,
-                    "correctSFs": correctSFs
-                },
-                description=desc,
-                plot_data=step_traces
-            )
-
-            self.steps.append(step_record)
-            if self.calculate_error(xr, xr_old) < self.tolerance:
-                return {
-                    "status": "success",
-                    "root": xr,
-                    "steps": [asdict(s) for s in self.steps],
-                    "message": "Converged successfully."
-                }
-            xl, xu = next_xl, next_xu
-            xr_old = xr
-
-        return {
-            "status": "success",  # Or "warning"
-            "root": xr,
-            "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached without full convergence."
-        }
-
-
-class FalsePosition(BracketingSolver):
-    @override
-    def solve(self):
-        self.steps = []
-        if not self.check_bracket(self.xl, self.xu):
-            return {
-                "status": "error",
-                "root": None,
-                "steps": [],
-                "message": f"Initialization Failed: Root is not bracketed between {self.xl} and {self.xu}. f(xl)={self.f(self.xl):.4f}, f(xu)={self.f(self.xu):.4f}"
-            }
-        xl, xu = self.xl, self.xu
-        xr_old = xl
-        xr = xl
-        for i in range(self.max_iter):
-            try:
-
-                fxl = self.round_significant(self.f(xl))
-                fxu = self.round_significant(self.f(xu))
-                xr = self.round_significant(((xl * fxu) - (xu - fxl)) / (fxu - fxl))
-                fxr = self.round_significant(self.f(xr))
-
-                if i == 0:
-                    error = 100.0
-                else:
-                    error = self.calculate_error(xr, xr_old)
-                    
-                correctSFs = self.number_of_significant_figures(error)
-            except Exception as e:
-
-                return {
-                    "status": "error",
-                    "root": xr,
-                    "steps": [asdict(s) for s in self.steps],  # Return what we have so far
-                    "message": f"Math Error at iteration {i}: {str(e)}"
-                }
-
-            if fxl * fxu > 0:
-                return {
-                    "status": "error",
-                    "root": xr,
-                    "steps": [asdict(s) for s in self.steps],
-                    "message": f"Bracket Lost at iteration {i}. Function may be discontinuous."
-                }
-
-            if fxl * fxr < 0:
-                desc = "Root in Left sub-interval, we replaced xu by xr."
-                next_xl, next_xu = xl, xr
-            elif fxl * fxr > 0:
-                desc = "Root in Right sub-interval, we replaced xl by xr."
-                next_xl, next_xu = xr, xu
-            else:
-                desc = "Exact root found."
-                error = 0.0
-                next_xl, next_xu = xr, xr
-            step_traces = [
-                # Vertical Line at xl
-                {"x": [xl, xl], "y": [0, fxl], "type": "scatter", "mode": "lines",
-                 "line": {"color": "green", "dash": "dash"}, "name": "xl"},
-
-                # Vertical Line at xu
-                {"x": [xu, xu], "y": [0, fxu], "type": "scatter", "mode": "lines",
-                 "line": {"color": "green", "dash": "dash"}, "name": "xu"},
-
-                # *** THE SECANT LINE *** (Blue Solid Line)
-                # Connects point (xl, f(xl)) to (xu, f(xu))
-                {"x": [xl, xu], "y": [fxl, fxu], "type": "scatter", "mode": "lines",
-                 "line": {"color": "blue", "width": 2}, "name": "Secant Line"},
-
-                # The Root Guess (Red Dot)
-                {"x": [xr], "y": [fxr], "type": "scatter", "mode": "markers",
-                 "marker": {"color": "red", "size": 8}, "name": "xr"}
-            ]
-            step_record = IterationStep(
-                step_number=i,
-                numericals={
-                    "xl": self.round_significant(xl),
-                    "xu": self.round_significant(xu),
-                    "xr": self.round_significant(xr),
-                    "f(xr)": self.round_significant(fxr),
-                    "error": error,
-                    "correctSFs": correctSFs
-                },
-                description=desc,
-                plot_data=step_traces
-            )
-            self.steps.append(step_record)
-            if error < self.tolerance:
-                return {
-                    "status": "success",
-                    "root": xr,
-
-                    "steps": [asdict(s) for s in self.steps],
-                    "message": "Converged successfully."
-                }
-
-            xl, xu = next_xl, next_xu
-            xr_old = xr
-
-        return {
-            "status": "success",
-            "root": xr,
-            "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached."
-        }
-
 
 
 class FixedPoint(OpenSolver):
@@ -355,6 +26,8 @@ class FixedPoint(OpenSolver):
             ea=self.calculate_error(xr, xr_old)
         except Exception:
             ea=100.0
+            
+        correctSFs = self.number_of_significant_figures(ea, xr)
         #for first itteration
         step_traces = [
             # vertical line from (xr_old, xr_old) to (xr_old, g(xr_old))
@@ -372,13 +45,48 @@ class FixedPoint(OpenSolver):
              "line": {"color": "red", "width": 2},
              "name": f"Iteration {current_iteration} horizontal"}
         ]
+        # ----- Add y=x and y=g(x) curves -----
+        # Create x-range around current guess
+        # x_min = xr_old - 5
+        # x_max = xr_old + 5
+        x_min=-10
+        x_max=10
+        xs = np.linspace(x_min, x_max, 200)
+
+        # g(x) values
+        try:
+            ys_g = [self.f(v) for v in xs]
+        except Exception:
+            ys_g = [None for _ in xs]  # safe fallback
+
+        # Add y=x line
+        step_traces.append({
+            "x": xs.tolist(),
+            "y": xs.tolist(),
+            "type": "scatter",
+            "mode": "lines",
+            "line": {"color": "blue", "width": 2},
+            "name": "y = x"
+        })
+
+        # Add g(x) curve
+        step_traces.append({
+            "x": xs.tolist(),
+            "y": ys_g,
+            "type": "scatter",
+            "mode": "lines",
+            "line": {"color": "green", "width": 2},
+            "name": "y = g(x)"
+        })
+
         step_record = IterationStep(
             step_number=current_iteration,
             numericals={
                 "xr_old": xr_old,
                 "xr_new": xr,
                 "g(xr_old)": xr,
-                "error": ea
+                "error": ea,
+                "correctSFs": correctSFs
             },
             description=f"Iteration {current_iteration}: xr_old={xr_old}, xr_new={xr}",
             plot_data=step_traces
@@ -390,8 +98,9 @@ class FixedPoint(OpenSolver):
             xr_old = xr
             try:
                 xr_new = self.round_significant(self.f(xr_old))
-                xr=xr_new
+                xr = xr_new
                 ea = abs((xr_new - xr_old) / (xr_new if xr_new != 0 else 1e-12)) * 100
+                correctSFs = self.number_of_significant_figures(ea, xr)
 
                 # Build iteration plot traces (staircase)
                 step_traces = [
@@ -408,6 +117,41 @@ class FixedPoint(OpenSolver):
                      "line": {"color": "red", "width": 2},
                      "name": f"Iteration {current_iteration} horizontal"}
                 ]
+                # ----- Add y=x and y=g(x) curves -----
+
+
+                # Create x-range around current guess
+                # x_min = xr_old - 5
+                # x_max = xr_old + 5
+                x_min=-10
+                x_max=10
+                xs = np.linspace(x_min, x_max, 200)
+
+                # g(x) values
+                try:
+                    ys_g = [self.f(v) for v in xs]
+                except Exception:
+                    ys_g = [None for _ in xs]  # safe fallback
+
+                # Add y=x line
+                step_traces.append({
+                    "x": xs.tolist(),
+                    "y": xs.tolist(),
+                    "type": "scatter",
+                    "mode": "lines",
+                    "line": {"color": "blue", "width": 2},
+                    "name": "y = x"
+                })
+
+                # Add g(x) curve
+                step_traces.append({
+                    "x": xs.tolist(),
+                    "y": ys_g,
+                    "type": "scatter",
+                    "mode": "lines",
+                    "line": {"color": "green", "width": 2},
+                    "name": "y = g(x)"
+                })
 
                 step_record = IterationStep(
                     step_number=current_iteration,
@@ -415,7 +159,8 @@ class FixedPoint(OpenSolver):
                         "xr_old": xr_old,
                         "xr_new": xr_new,
                         "g(xr_old)": xr_new,
-                        "error": ea
+                        "error": ea,
+                        "correctSFs": correctSFs
                     },
                     description=f"Iteration {current_iteration}: xr_old={xr_old}, xr_new={xr_new}",
                     plot_data=step_traces
@@ -431,15 +176,22 @@ class FixedPoint(OpenSolver):
                     "message": f"Math Error at iteration {current_iteration}: {str(e)}"
                 }
 
-        status = "success" if ea <= self.tolerance else "failure"
-        message = "Converged successfully." if ea <= self.tolerance else f"Max iterations ({self.max_iter}) reached."
+        if ea <= self.tolerance:
+            return {
+                "status": "success",
+                "root": xr,
+                "steps": [asdict(s) for s in self.steps],
+                "message": "Converged successfully."
+            }
+        else:
+            return {
+                "status": "failure",
+                "root": xr,
+                "steps": [asdict(s) for s in self.steps],
+                "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
+            }
 
-        return {
-            "status": status,
-            "root": xr,
-            "steps": [asdict(s) for s in self.steps],
-            "message": message
-        }
+
 
 class OriginalNewtonRaphson(OpenSolver):
     @override
@@ -464,8 +216,31 @@ class OriginalNewtonRaphson(OpenSolver):
 
         for i in range(self.max_iter):
             try:
-
                 fx = self.round_significant(self.f(x_current))
+
+                # Check for exact root
+                if fx == 0:
+                    self.steps.append(IterationStep(
+                        step_number=i,
+                        numericals={
+                            "x_old": x_old,
+                            "x_current": x_current,
+                            "f(x_current)": 0,
+                            "f'(x_current)": 0,
+                            "x_new": x_current,
+                            "error": 0,
+                            "correctSFs": self.precision
+                        },
+                        description="Exact root found.",
+                        plot_data=[{"x": [x_current], "y": [0], "type": "scatter", "mode": "markers", "marker": {"color": "green", "size": 10}, "name": "Exact Root"}]
+                    ))
+                    return {
+                        "status": "success",
+                        "root": x_current,
+                        "steps": [asdict(s) for s in self.steps],
+                        "message": "Exact root found."
+                    }
+
                 fdx = self.round_significant(f_deriv(x_current))
 
                 if fdx == 0:
@@ -483,7 +258,7 @@ class OriginalNewtonRaphson(OpenSolver):
                 else:
                     error = self.calculate_error(x_new, x_current)
 
-                correctSFs = self.number_of_significant_figures(error)
+                correctSFs = self.number_of_significant_figures(error, x_new)
 
             except Exception as e:
                 return {
@@ -542,7 +317,7 @@ class OriginalNewtonRaphson(OpenSolver):
             "status": "failure",
             "root": x_new,
             "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached."
+            "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
         }
 
 
@@ -576,6 +351,27 @@ class ModifiedNewtonRaphson(OpenSolver):
         for i in range(self.max_iter):
             try:
                 fx = self.round_significant(self.f(x_current))
+
+                if fx == 0:
+                    self.steps.append(IterationStep(
+                        step_number=i,
+                        numericals={
+                            "x_old": x_old,
+                            "x_current": x_current,
+                            "f(x)": 0, "f'(x)": 0, "f''(x)": 0,
+                            "x_new": x_current,
+                            "error": 0,
+                            "correctSFs": self.precision
+                        },
+                        description="Exact root found.",
+                        plot_data=[{"x": [x_current], "y": [0], "type": "scatter", "mode": "markers", "marker": {"color": "green", "size": 10}, "name": "Exact Root"}]
+                    ))
+                    return {
+                        "status": "success",
+                        "root": x_current,
+                        "steps": [asdict(s) for s in self.steps],
+                        "message": "Exact root found."
+                    }
                 fdx = self.round_significant(f_prime(x_current))
                 f2dx = self.round_significant(f_double_prime(x_current))
 
@@ -596,7 +392,7 @@ class ModifiedNewtonRaphson(OpenSolver):
                 else:
                     error = self.calculate_error(x_new, x_current)
 
-                correctSFs = self.number_of_significant_figures(error)
+                correctSFs = self.number_of_significant_figures(error, x_new)
 
             except Exception as e:
                 return {
@@ -647,10 +443,10 @@ class ModifiedNewtonRaphson(OpenSolver):
             x_current = x_new
 
         return {
-            "status": "success",
+            "status": "failure",
             "root": x_new,
             "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached."
+            "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
         }
 
 
@@ -661,12 +457,12 @@ class SecantMethod(OpenSolver):
         x0 = self.x0
         x1 = self.x1
 
-        if x1 is None:
+        if x1 is None or x0 == x1:
             return {
                 "status": "error",
                 "root": None,
                 "steps": [],
-                "message": "Initialization Failed: Secant Method requires two initial guesses (x0 and x1)."
+                "message": "Initialization Failed: Secant Method requires two distinct initial guesses (x0 and x1)."
             }
 
         x_old = x0
@@ -684,6 +480,8 @@ class SecantMethod(OpenSolver):
                     error = 100.0
                 else:
                     error = self.calculate_error(x_new, x_cur)
+                    
+                correctSFs = self.number_of_significant_figures(error, x_new)
 
             except Exception as e:
                 return {
@@ -692,6 +490,15 @@ class SecantMethod(OpenSolver):
                 "steps": [asdict(s) for s in self.steps],  # Return what we have so far
                 "message": f"Math Error at iteration {i}: {str(e)}"
             }
+
+            m = (f_xcur - f_xold) / (x_cur - x_old)
+            b = f_xold - m * x_old
+            
+            x_min = min(x_old, x_cur, x_new)
+            x_max = max(x_old, x_cur, x_new)
+            
+            x_line = [x_min, x_max]
+            y_line = [m*x_min + b, m*x_max + b]
 
             step_traces = [
                 # old point
@@ -702,10 +509,10 @@ class SecantMethod(OpenSolver):
                  "marker": {"color": "red", "size": 8}, "name": "x_cur"},
                 # new approximation point
                 {"x": [x_new], "y": [0], "type": "scatter", "mode": "markers",
-                 "marker": {"color": "red", "size": 8}, "name": "x_new"},
+                 "marker": {"color": "green", "size": 8}, "name": "x_new"},
                 # secant line
-                {"x": [x_old, x_cur], "y": [f_xold, f_xcur], "type": "scatter", "mode": "lines",
-                 "line": {"color": "blue", "width": 2, "dash": "dash"}, "name": "Secant Line"}
+                {"x": x_line, "y": y_line, "type": "scatter", "mode": "lines",
+                 "line": {"color": "black", "width": 2, "dash": "dash"}, "name": "Secant Line"}
             ]
 
             step_record = IterationStep(
@@ -715,7 +522,8 @@ class SecantMethod(OpenSolver):
                     "x1": x_cur,
                     "x_new": x_new,
                     "f(x_new)": f_xnew,
-                    "error": error
+                    "error": error,
+                    "correctSFs": correctSFs
                 },
                 description=f"Iteration {i}",
                 plot_data=step_traces
@@ -738,5 +546,5 @@ class SecantMethod(OpenSolver):
             "status": "failure",
             "root": x_new,
             "steps": [asdict(s) for s in self.steps],
-            "message": f"Max iterations ({self.max_iter}) reached."
+            "message": f"Max iterations ({self.max_iter}) reached without convergence to tolerance {self.tolerance}."
         }

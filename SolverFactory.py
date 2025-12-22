@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from BackEnd.methods import (
+from BackEnd.linearMethods import (
     GaussElimination,
     GaussJordan,
     DoolittleLUDecomposition,
@@ -14,6 +14,14 @@ from mainSymbols import (
     SymDoolittleLUDecomposition,
     SymCroutLUDecomposition,
     SymCholeskyLUDecomposition,
+)
+from BackEnd.nonlinearMethods import (
+    Bisection,
+    FalsePosition,
+    FixedPoint,
+    OriginalNewtonRaphson,
+    ModifiedNewtonRaphson,
+    SecantMethod
 )
 
 
@@ -152,6 +160,53 @@ class SymbolicSolverFactory(AbstractSolverFactory):
             'direct': ['gauss_elimination', 'gauss_jordan', 'doolittle_lu', 'crout_lu', 'cholesky'],
             'iterative': ['gauss_seidel', 'jacobi']
         }
+        
+        
+class NonLinearSolverFactory:
+    def create_bisection(self, func, xl, xu, precision=5, max_iter=50, tolerance=1e-5):
+        return Bisection(func, xl, xu, precision=precision, max_iter=max_iter, tolerance=tolerance)
+    
+    def create_false_position(self, func, xl, xu, precision=5, max_iter=50, tolerance=1e-5):
+        return FalsePosition(func, xl, xu, precision=precision, max_iter=max_iter, tolerance=tolerance)
+    
+    def create_fixed_point(self, func, x0, precision=5, max_iter=50, tolerance=1e-5):
+        return FixedPoint(func, x0, precision=precision, max_iter=max_iter, tolerance=tolerance)
+    
+    def create_newton_raphson(self, func, x0, precision=5, max_iter=50, tolerance=1e-5):
+        return OriginalNewtonRaphson(func, x0, precision=precision, max_iter=max_iter, tolerance=tolerance)
+    
+    def create_modified_newton_raphson(self, func, x0, precision=5, max_iter=50, tolerance=1e-5):
+        return ModifiedNewtonRaphson(func, x0, precision=precision, max_iter=max_iter, tolerance=tolerance)
+    
+    def create_secant_method(self, func, x0, x1, precision=5, max_iter=50, tolerance=1e-5):
+        return SecantMethod(func, x0, x1, precision=precision, max_iter=max_iter, tolerance=tolerance)
+    
+    def create_solver(self, method_name, *args, **kwargs):
+        method_name = method_name.lower().replace(' ', '_')
+        
+        method_map = {
+            'bisection': self.create_bisection,
+            'false_position': self.create_false_position,
+            'fixed_point': self.create_fixed_point,
+            'newton_raphson': self.create_newton_raphson,
+            'modified_newton_raphson': self.create_modified_newton_raphson,
+            'secant_method': self.create_secant_method,
+        }
+        
+        if method_name in method_map:
+            return method_map[method_name](*args, **kwargs)
+        else:
+            raise ValueError(f"Unknown method '{method_name}'. Available methods: {', '.join(method_map.keys())}")
+        
+    def get_available_methods(self):
+        return [
+            'bisection',
+            'false_position',
+            'fixed_point',
+            'newton_raphson',
+            'modified_newton_raphson',
+            'secant_method'
+        ]
 
 
 if __name__ == "__main__":

@@ -29,9 +29,9 @@ export class SolverService {
   }
 
   // New method for fetching function plots
-  getFunctionPlot(data: { function: string, method?: string }): Observable<any> {
+  getFunctionPlot(data: { func: string, method?: string }): Observable<any> {
     console.log("Function to be sent to the backend: ");
-    console.log(data.function);
+    console.log(data.func);
     console.log("Method: " + data.method);
     const url = this.apiUrl + "/plot" // Expecting this endpoint
     return this.http.post<any>(url, data, this.httpOptions);
